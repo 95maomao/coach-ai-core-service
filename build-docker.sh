@@ -5,17 +5,8 @@
 
 echo "开始构建Docker镜像..."
 
-# 1. 清理并构建Maven项目
-echo "步骤1: 构建Maven项目..."
-mvn clean package -DskipTests
-
-if [ $? -ne 0 ]; then
-    echo "Maven构建失败！"
-    exit 1
-fi
-
-# 2. 构建Docker镜像
-echo "步骤2: 构建Docker镜像..."
+# 构建Docker镜像（多阶段构建，无需本地Maven构建）
+echo "构建Docker镜像（多阶段构建）..."
 docker build -t coach-ai-core-service:latest .
 
 if [ $? -ne 0 ]; then

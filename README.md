@@ -29,13 +29,18 @@ mvn clean package
 
 ## Docker部署
 
+### 多阶段构建优势
+- ✅ **无需本地Maven环境**：Docker内部完成Maven构建
+- ✅ **ACR兼容**：解决ACR构建时找不到JAR文件的问题
+- ✅ **镜像优化**：最终镜像只包含运行时环境，体积更小
+- ✅ **构建缓存**：利用Docker层缓存，提高构建速度
+
 ### 本地Docker构建
 ```bash
-# 使用构建脚本
+# 使用构建脚本（推荐）
 ./build-docker.sh
 
 # 或手动构建
-mvn clean package
 docker build -t coach-ai-core-service:latest .
 ```
 
@@ -54,9 +59,10 @@ curl http://localhost:8080/api/health
 
 项目已配置支持阿里云容器镜像服务(ACR)的自动构建：
 
-1. Dockerfile位于项目根目录
-2. 构建上下文目录设置为 `/`
-3. 支持main分支代码变更自动构建
+1. **多阶段Dockerfile**：在Docker内部完成Maven构建
+2. **构建上下文目录**：设置为 `/`
+3. **自动构建**：支持main分支代码变更自动构建
+4. **无需预构建**：ACR会自动处理Maven构建过程
 
 ## 项目结构
 
