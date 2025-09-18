@@ -1,23 +1,22 @@
-# 多阶段构建：第一阶段 - 构建阶段
-FROM maven:3.8.6-openjdk-11-slim AS build
+# 第一阶段：编译打包
+FROM mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/maven:3.8.6-openjdk-11-slim AS build
+WORKDIR /build
 
-# 设置工作目录
-WORKDIR /app
+# 创建 Maven 配置目录并设置权限
+RUN mkdir -p /root/.m2 && chmod 700 /root/.m2
 
-# 复制pom.xml文件（利用Docker缓存层）
+# 先只拷贝pom.xml并下载依赖
 COPY pom.xml .
+RUN mvn -B dependency:go-offline -DskipTests
 
-# 下载依赖（利用Docker缓存层）
-RUN mvn dependency:go-offline -B
+# 复制源码
+COPY src /build/src
 
-# 复制源代码
-COPY src ./src
+# 编译打包
+RUN mvn -B clean package -DskipTests
 
-# 构建应用
-RUN mvn clean package -DskipTests
-
-# 第二阶段 - 运行阶段
-FROM openjdk:11-jre-slim
+# 第二阶段：生成最终运行镜像
+FROM mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/openjdk:11-jre-slim
 
 # 设置工作目录
 WORKDIR /app
@@ -32,8 +31,8 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 # 创建应用用户（安全考虑）
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# 从构建阶段复制JAR文件
-COPY --from=build /app/target/coach-ai-core-service-*.jar app.jar
+# 复制构建产物
+COPY --from=build /build/target/coach-ai-core-service-*.jar app.jar
 
 # 修改文件所有者
 RUN chown -R appuser:appuser /app
