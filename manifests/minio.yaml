@@ -41,7 +41,7 @@ spec:
               # Create the data directory
               mkdir -p /data
               # Start MinIO server
-              /usr/bin/minio server /data --console-address ":9001"
+              /usr/bin/minio server /data --console-address "0.0.0.0:9001" --address "0.0.0.0:9000"
           ports:
             - containerPort: 9000
               name: api
@@ -59,7 +59,7 @@ spec:
                   name: minio-secret
                   key: secret-key
             - name: MINIO_BROWSER_REDIRECT_URL
-              value: "http://localhost:9001"
+              value: "http://120.77.56.132:9001"
           volumeMounts:
             - name: minio-storage
               mountPath: /data
@@ -149,6 +149,10 @@ metadata:
   name: minio-init
   namespace: default
 spec:
+  # 设置 Job 完成后自动清理时间（秒）
+  ttlSecondsAfterFinished: 300
+  # 设置 Job 为一次性任务，避免重复执行
+  backoffLimit: 3
   template:
     spec:
       imagePullSecrets:
@@ -178,7 +182,13 @@ spec:
               echo "MinIO initialization completed successfully!"
           env:
             - name: MINIO_ROOT_USER
-              value: "minioadmin"
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: access-key
             - name: MINIO_ROOT_PASSWORD
-              value: "minioadmin123"
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: secret-key
       restartPolicy: OnFailure
