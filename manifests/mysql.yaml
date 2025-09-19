@@ -19,6 +19,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: alicloud-disk-topology-alltype
   resources:
     requests:
       storage: 10Gi
