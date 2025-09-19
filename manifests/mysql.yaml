@@ -1,21 +1,5 @@
 ---
 
-# PersistentVolumeClaim for MySQL data
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-pvc
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: alicloud-disk-topology-alltype
-  resources:
-    requests:
-      storage: 10Gi
-
----
-
 # MySQL Deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -47,8 +31,7 @@ spec:
               mountPath: /var/lib/mysql
       volumes:
         - name: mysql-storage
-          persistentVolumeClaim:
-            claimName: mysql-pvc
+          emptyDir: {}
 
 ---
 
