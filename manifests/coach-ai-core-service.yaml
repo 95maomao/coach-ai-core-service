@@ -33,15 +33,17 @@ spec:
           image: ${IMAGE}
           ports:
             - containerPort: 8080
-#          env:
-#            - name: SPRING_DATASOURCE_URL
-#              value: "jdbc:mysql://localhost:3306/user?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai"
-#            - name: SPRING_DATASOURCE_USERNAME
-#              value: "maozhang"
-#            - name: SPRING_DATASOURCE_PASSWORD
-#              value: "MZtest123456"
-#            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
-#              value: "org.hibernate.dialect.MySQL8Dialect"
+          env:
+            - name: MYSQL_HOST
+              value: "47.112.214.8"
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_DATABASE
+              value: "coach_ai"
+            - name: MYSQL_USERNAME
+              value: "root"
+            - name: MYSQL_PASSWORD
+              value: "test123456"
 ---
 
 # LoadBalancer Service for external access
