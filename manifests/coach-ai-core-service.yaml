@@ -1,0 +1,60 @@
+# Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: acr-registry-private
+  namespace: default
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: ${ACR_SECRET}
+
+---
+
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coach-ai-core-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coach-ai-core-service
+  template:
+    metadata:
+      labels:
+        app: coach-ai-core-service
+    spec:
+      imagePullSecrets:
+        - name: acr-registry-private
+      containers:
+        - name: coach-ai-core-service
+          image: ${IMAGE}
+          ports:
+            - containerPort: 8080
+#          env:
+#            - name: SPRING_DATASOURCE_URL
+#              value: "jdbc:mysql://localhost:3306/user?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai"
+#            - name: SPRING_DATASOURCE_USERNAME
+#              value: "maozhang"
+#            - name: SPRING_DATASOURCE_PASSWORD
+#              value: "MZtest123456"
+#            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+#              value: "org.hibernate.dialect.MySQL8Dialect"
+---
+
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: coach-ai-core-service
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: coach-ai-core-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+
