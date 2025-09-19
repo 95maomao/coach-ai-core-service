@@ -1,0 +1,80 @@
+# Secret for ACR registry
+apiVersion: v1
+kind: Secret
+metadata:
+  name: acr-registry-private
+  namespace: default
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: ${ACR_SECRET}
+
+---
+
+# PersistentVolumeClaim for MySQL data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+
+# MySQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      imagePullSecrets:
+        - name: acr-registry-private
+      containers:
+        - name: mysql
+          image: registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "test123456"
+            - name: MYSQL_DATABASE
+              value: "coach_ai"
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+
+---
+
+# MySQL LoadBalancer Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-lb
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP
+      name: mysql
