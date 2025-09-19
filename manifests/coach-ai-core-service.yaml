@@ -44,6 +44,15 @@ spec:
               value: "root"
             - name: MYSQL_PASSWORD
               value: "test123456"
+            # MinIO 配置
+            - name: MINIO_ENDPOINT
+              value: "http://minio:9000"
+            - name: MINIO_ACCESS_KEY
+              value: "minioadmin"
+            - name: MINIO_SECRET_KEY
+              value: "minioadmin123"
+            - name: MINIO_BUCKET_NAME
+              value: "coach-ai-files"
 ---
 
 # LoadBalancer Service for external access
