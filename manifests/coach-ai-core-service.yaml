@@ -44,17 +44,19 @@ spec:
 #              value: "org.hibernate.dialect.MySQL8Dialect"
 ---
 
-# Service
+# LoadBalancer Service for external access
 apiVersion: v1
 kind: Service
 metadata:
-  name: coach-ai-core-service
+  name: coach-ai-core-service-lb
   namespace: default
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: coach-ai-core-service
   ports:
-    - port: 8080
+    - port: 80
       targetPort: 8080
+      protocol: TCP
+      name: http
 
