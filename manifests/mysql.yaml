@@ -1,5 +1,4 @@
 ---
-
 # MySQL Deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -20,7 +19,7 @@ spec:
         - name: acr-registry-private
       containers:
         - name: mysql
-          image: registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/mysql:8.0
+          image: mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/mysql:8.0
           ports:
             - containerPort: 3306
           env:
@@ -36,7 +35,6 @@ spec:
           emptyDir: {}
 
 ---
-
 # MySQL LoadBalancer Service
 apiVersion: v1
 kind: Service
