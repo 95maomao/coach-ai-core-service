@@ -33,7 +33,7 @@ spec:
         - name: acr-registry-private
       containers:
         - name: minio
-          image: mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/minio:latest
+          image: mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/minio/minio:latest
           command:
             - /bin/bash
             - -c
@@ -155,7 +155,7 @@ spec:
         - name: acr-registry-private
       containers:
         - name: minio-client
-          image: mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/mc:latest
+          image: mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/minio/mc:latest
           command:
             - /bin/bash
             - -c
