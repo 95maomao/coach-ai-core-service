@@ -1,5 +1,5 @@
 # 第一阶段：编译打包
-FROM mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/maven:3.8.6-openjdk-11-slim AS build
+FROM mz-acr-registry-vpc.cn-shenzhen.cr.aliyuncs.com/coach_ai/maven:3.8.6-openjdk-11-slim AS build
 WORKDIR /build
 
 # 创建 Maven 配置目录并设置权限
@@ -16,7 +16,7 @@ COPY src /build/src
 RUN mvn -B clean package -DskipTests
 
 # 第二阶段：生成最终运行镜像
-FROM mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/openjdk:11-jre-slim
+FROM mz-acr-registry-vpc.cn-shenzhen.cr.aliyuncs.com/coach_ai/openjdk:11-jre-slim
 
 # 设置工作目录
 WORKDIR /app
