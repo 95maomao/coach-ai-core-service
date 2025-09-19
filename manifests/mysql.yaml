@@ -1,3 +1,13 @@
+# Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: acr-registry-private
+  namespace: default
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: ${ACR_SECRET}
+
 ---
 
 # MySQL Deployment
@@ -16,6 +26,8 @@ spec:
       labels:
         app: mysql
     spec:
+      imagePullSecrets:
+        - name: acr-registry-private
       containers:
         - name: mysql
           image: registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/mysql:8.0
