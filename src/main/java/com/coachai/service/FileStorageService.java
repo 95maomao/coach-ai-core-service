@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.jayway.jsonpath.JsonPath;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -118,6 +120,22 @@ public class FileStorageService {
      */
     public String saveBase64Image(String base64Image) {
         return saveBase64File(base64Image, minioConfig.getPaths().getImages());
+    }
+
+    /**
+     * 从JSON字符串中解析并保存base64图片
+     *
+     * @param jsonString 包含base64数据的JSON字符串或直接的base64字符串
+     * @return 保存后的文件访问URL
+     */
+    public String saveBase64ImageFromJson(String jsonString) {
+        try {
+            String base64Data = extractBase64FromJson(jsonString);
+            return saveBase64File(base64Data, minioConfig.getPaths().getImages());
+        } catch (Exception e) {
+            log.error("从JSON字符串中解析base64数据失败", e);
+            throw new RuntimeException("从JSON字符串中解析base64数据失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -543,6 +561,74 @@ public class FileStorageService {
                 return ".xml";
             default:
                 return ".bin"; // 默认扩展名
+        }
+    }
+
+    /**
+     * 从JSON字符串中提取base64数据
+     *
+     * @param jsonString JSON字符串或直接的base64字符串
+     * @return base64字符串
+     */
+    private String extractBase64FromJson(String jsonString) {
+        try {
+            if (jsonString == null || jsonString.trim().isEmpty()) {
+                throw new IllegalArgumentException("输入数据不能为空");
+            }
+
+            String trimmedInput = jsonString.trim();
+            
+            // 如果不是以 { 开头，可能是直接的base64字符串
+            if (!trimmedInput.startsWith("{")) {
+                log.info("输入似乎是直接的base64字符串，长度: {}", trimmedInput.length());
+                return trimmedInput;
+            }
+
+            log.debug("解析JSON字符串: {}", trimmedInput.length() > 200 ? 
+                trimmedInput.substring(0, 200) + "..." : trimmedInput);
+
+            // 使用JSONPath尝试多种可能的路径来提取base64数据
+            String[] possiblePaths = {
+                "$.data.response.candidates[0].content.parts[0].inlineData.data",  // 你提供的路径
+                "$.data.response.candidates[*].content.parts[*].inlineData.data",  // 通配符版本
+                "$.response.candidates[0].content.parts[0].inlineData.data",       // 没有外层data的版本
+                "$.candidates[0].content.parts[0].inlineData.data",                // 更简化的版本
+                "$..inlineData.data",                                              // 递归搜索inlineData.data
+                "$..data",                                                         // 递归搜索所有data字段
+                "$.data"                                                           // 直接取data字段
+            };
+
+            for (String path : possiblePaths) {
+                try {
+                    Object result = JsonPath.read(trimmedInput, path);
+                    if (result != null) {
+                        String base64Data = null;
+                        
+                        if (result instanceof String) {
+                            base64Data = (String) result;
+                        } else if (result instanceof List) {
+                            List<?> list = (List<?>) result;
+                            if (!list.isEmpty() && list.get(0) instanceof String) {
+                                base64Data = (String) list.get(0);
+                            }
+                        }
+                        
+                        if (base64Data != null && !base64Data.trim().isEmpty()) {
+                            log.info("成功使用路径 {} 提取到base64数据，长度: {}", path, base64Data.length());
+                            return base64Data;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.debug("路径 {} 解析失败: {}", path, e.getMessage());
+                    // 继续尝试下一个路径
+                }
+            }
+
+            throw new IllegalArgumentException("无法从JSON中提取base64数据，请检查JSON结构是否正确");
+
+        } catch (Exception e) {
+            log.error("解析JSON数据时发生错误", e);
+            throw new RuntimeException("解析JSON数据失败: " + e.getMessage());
         }
     }
 }

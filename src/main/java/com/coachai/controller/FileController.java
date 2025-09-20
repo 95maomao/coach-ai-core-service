@@ -188,25 +188,25 @@ public class FileController {
                 return ApiResponse.error("Base64图片数据不能为空");
             }
             
-            String base64Image = request.getBase64Image();
+            String base64ImageData = request.getBase64Image();
             
-            // 优化日志输出，避免打印完整的base64数据
-            String logData = base64Image.length() > 100 ? 
-                base64Image.substring(0, 100) + "... (长度: " + base64Image.length() + ")" : base64Image;
+            // 优化日志输出，避免打印完整的数据
+            String logData = base64ImageData.length() > 100 ? 
+                base64ImageData.substring(0, 100) + "... (字符串长度: " + base64ImageData.length() + ")" : base64ImageData;
             log.info("上传base64图片(JSON): {}, 文件名提示: {}", logData, request.getFileName());
             
-            String savedFileUrl = fileStorageService.saveBase64Image(base64Image);
-            
-            // 计算原始数据大小（估算）
-            String base64Content = base64Image;
-            if (base64Image.contains(",")) {
-                base64Content = base64Image.substring(base64Image.indexOf(",") + 1);
+            // 判断是直接的base64字符串还是JSON字符串
+            String savedFileUrl;
+            if (base64ImageData.trim().startsWith("{")) {
+                // 如果以 { 开头，认为是JSON字符串，使用JSON解析方法
+                savedFileUrl = fileStorageService.saveBase64ImageFromJson(base64ImageData);
+            } else {
+                // 否则认为是直接的base64字符串
+                savedFileUrl = fileStorageService.saveBase64Image(base64ImageData);
             }
-            int estimatedSize = (int) (base64Content.length() * 0.75); // base64解码后大约是原长度的75%
             
             Map<String, String> result = new HashMap<>();
             result.put("savedFileUrl", savedFileUrl);
-            result.put("estimatedSize", String.valueOf(estimatedSize));
             result.put("originalFileName", request.getFileName());
             result.put("description", request.getDescription());
             result.put("message", "Base64图片保存成功");
