@@ -93,3 +93,5 @@ nb-configuration.xml
 ## Cursor
 ##############################
 .cursor/
+
+dev_files/
