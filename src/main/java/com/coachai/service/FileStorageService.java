@@ -8,10 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -94,6 +98,128 @@ public class FileStorageService {
      */
     public String uploadTempFile(MultipartFile file) {
         return uploadFile(file, minioConfig.getPaths().getTemp());
+    }
+
+    /**
+     * 通过URL下载图片并保存到MinIO
+     *
+     * @param imageUrl 图片URL
+     * @return 保存后的文件访问URL
+     */
+    public String downloadAndSaveImage(String imageUrl) {
+        return downloadAndSaveFromUrl(imageUrl, minioConfig.getPaths().getImages());
+    }
+
+    /**
+     * 将base64图片保存到MinIO
+     *
+     * @param base64Image base64编码的图片数据
+     * @return 保存后的文件访问URL
+     */
+    public String saveBase64Image(String base64Image) {
+        return saveBase64File(base64Image, minioConfig.getPaths().getImages());
+    }
+
+    /**
+     * 将base64文件保存到MinIO
+     *
+     * @param base64Data base64编码的文件数据
+     * @param path       存储路径
+     * @return 保存后的文件访问URL
+     */
+    public String saveBase64File(String base64Data, String path) {
+        try {
+            // 确保存储桶存在
+            ensureBucketExists();
+
+            // 解析base64数据
+            String[] parts = parseBase64Data(base64Data);
+            String mimeType = parts[0];
+            String base64Content = parts[1];
+
+            // 解码base64数据
+            byte[] fileBytes = Base64.getDecoder().decode(base64Content);
+            
+            // 根据MIME类型确定文件扩展名
+            String extension = getExtensionFromMimeType(mimeType);
+            
+            // 生成唯一文件名
+            String fileName = generateFileNameWithExtension(extension);
+            String objectName = path + fileName;
+
+            // 上传文件到MinIO
+            try (InputStream inputStream = new ByteArrayInputStream(fileBytes)) {
+                minioClient.putObject(
+                        PutObjectArgs.builder()
+                                .bucket(minioConfig.getBucketName())
+                                .object(objectName)
+                                .stream(inputStream, fileBytes.length, -1)
+                                .contentType(mimeType != null ? mimeType : "application/octet-stream")
+                                .build()
+                );
+            }
+
+            log.info("Base64文件保存成功: {} (大小: {} bytes)", objectName, fileBytes.length);
+            return getFileUrl(objectName);
+
+        } catch (Exception e) {
+            log.error("Base64文件保存失败", e);
+            throw new RuntimeException("Base64文件保存失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 通过URL下载文件并保存到MinIO
+     *
+     * @param fileUrl 文件URL
+     * @param path    存储路径
+     * @return 保存后的文件访问URL
+     */
+    public String downloadAndSaveFromUrl(String fileUrl, String path) {
+        try {
+            // 确保存储桶存在
+            ensureBucketExists();
+
+            // 创建URL连接
+            URL url = new URL(fileUrl);
+            URLConnection connection = url.openConnection();
+            
+            // 设置请求头，模拟浏览器访问
+            connection.setRequestProperty("User-Agent", 
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+            connection.setConnectTimeout(10000); // 10秒连接超时
+            connection.setReadTimeout(30000);    // 30秒读取超时
+
+            // 获取文件信息
+            String contentType = connection.getContentType();
+            int contentLength = connection.getContentLength();
+            
+            // 从URL中提取文件扩展名，如果没有则根据Content-Type推断
+            String extension = getFileExtensionFromUrl(fileUrl, contentType);
+            
+            // 生成唯一文件名
+            String fileName = generateFileNameWithExtension(extension);
+            String objectName = path + fileName;
+
+            // 下载并上传文件
+            try (InputStream inputStream = connection.getInputStream()) {
+                minioClient.putObject(
+                        PutObjectArgs.builder()
+                                .bucket(minioConfig.getBucketName())
+                                .object(objectName)
+                                .stream(inputStream, contentLength, -1)
+                                .contentType(contentType != null ? contentType : "application/octet-stream")
+                                .build()
+                );
+            }
+
+            log.info("从URL下载文件成功: {} -> {}", fileUrl, objectName);
+            return getFileUrl(objectName);
+
+        } catch (Exception e) {
+            log.error("从URL下载文件失败: {}", fileUrl, e);
+            throw new RuntimeException("从URL下载文件失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -282,5 +408,141 @@ public class FileStorageService {
      */
     private String getFileUrl(String objectName) {
         return minioConfig.getEndpoint() + "/" + minioConfig.getBucketName() + "/" + objectName;
+    }
+
+    /**
+     * 从URL和Content-Type中获取文件扩展名
+     *
+     * @param fileUrl     文件URL
+     * @param contentType Content-Type
+     * @return 文件扩展名
+     */
+    private String getFileExtensionFromUrl(String fileUrl, String contentType) {
+        // 首先尝试从URL中提取扩展名
+        if (fileUrl != null && fileUrl.contains(".")) {
+            String urlExtension = fileUrl.substring(fileUrl.lastIndexOf("."));
+            // 移除查询参数
+            if (urlExtension.contains("?")) {
+                urlExtension = urlExtension.substring(0, urlExtension.indexOf("?"));
+            }
+            if (urlExtension.length() <= 5) { // 合理的扩展名长度
+                return urlExtension;
+            }
+        }
+
+        // 如果URL中没有扩展名，根据Content-Type推断
+        if (contentType != null) {
+            switch (contentType.toLowerCase()) {
+                case "image/jpeg":
+                case "image/jpg":
+                    return ".jpg";
+                case "image/png":
+                    return ".png";
+                case "image/gif":
+                    return ".gif";
+                case "image/webp":
+                    return ".webp";
+                case "image/bmp":
+                    return ".bmp";
+                case "application/pdf":
+                    return ".pdf";
+                case "text/plain":
+                    return ".txt";
+                default:
+                    return ".bin"; // 默认扩展名
+            }
+        }
+
+        return ".bin"; // 默认扩展名
+    }
+
+    /**
+     * 生成带扩展名的唯一文件名
+     *
+     * @param extension 文件扩展名
+     * @return 唯一文件名
+     */
+    private String generateFileNameWithExtension(String extension) {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        return timestamp + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
+    }
+
+    /**
+     * 解析base64数据，提取MIME类型和内容
+     *
+     * @param base64Data base64数据
+     * @return [mimeType, base64Content]
+     */
+    private String[] parseBase64Data(String base64Data) {
+        if (base64Data == null || base64Data.trim().isEmpty()) {
+            throw new IllegalArgumentException("Base64数据不能为空");
+        }
+
+        String mimeType = null;
+        String base64Content = base64Data.trim();
+
+        // 检查是否包含data URL格式: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA...
+        if (base64Content.startsWith("data:")) {
+            int commaIndex = base64Content.indexOf(",");
+            if (commaIndex == -1) {
+                throw new IllegalArgumentException("无效的Base64数据格式");
+            }
+
+            String header = base64Content.substring(0, commaIndex);
+            base64Content = base64Content.substring(commaIndex + 1);
+
+            // 提取MIME类型: data:image/jpeg;base64 -> image/jpeg
+            if (header.contains(":") && header.contains(";")) {
+                mimeType = header.substring(header.indexOf(":") + 1, header.indexOf(";"));
+            }
+        }
+
+        // 验证base64格式
+        try {
+            Base64.getDecoder().decode(base64Content);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("无效的Base64编码格式: " + e.getMessage());
+        }
+
+        return new String[]{mimeType, base64Content};
+    }
+
+    /**
+     * 根据MIME类型获取文件扩展名
+     *
+     * @param mimeType MIME类型
+     * @return 文件扩展名
+     */
+    private String getExtensionFromMimeType(String mimeType) {
+        if (mimeType == null) {
+            return ".bin"; // 默认扩展名
+        }
+
+        switch (mimeType.toLowerCase()) {
+            case "image/jpeg":
+            case "image/jpg":
+                return ".jpg";
+            case "image/png":
+                return ".png";
+            case "image/gif":
+                return ".gif";
+            case "image/webp":
+                return ".webp";
+            case "image/bmp":
+                return ".bmp";
+            case "image/svg+xml":
+                return ".svg";
+            case "application/pdf":
+                return ".pdf";
+            case "text/plain":
+                return ".txt";
+            case "application/json":
+                return ".json";
+            case "application/xml":
+            case "text/xml":
+                return ".xml";
+            default:
+                return ".bin"; // 默认扩展名
+        }
     }
 }

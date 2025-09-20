@@ -109,6 +109,67 @@ public class FileController {
     }
 
     /**
+     * 通过URL下载图片并保存到MinIO
+     *
+     * @param imageUrl 图片URL
+     * @return 保存结果
+     */
+    @PostMapping("/download/image")
+    public ApiResponse<Map<String, String>> downloadImageFromUrl(@RequestParam("imageUrl") String imageUrl) {
+        try {
+            if (imageUrl == null || imageUrl.trim().isEmpty()) {
+                return ApiResponse.error("图片URL不能为空");
+            }
+
+            String savedFileUrl = fileStorageService.downloadAndSaveImage(imageUrl);
+            
+            Map<String, String> result = new HashMap<>();
+            result.put("originalUrl", imageUrl);
+            result.put("savedFileUrl", savedFileUrl);
+            result.put("message", "图片下载并保存成功");
+
+            return ApiResponse.success("图片下载并保存成功", result);
+        } catch (Exception e) {
+            log.error("图片下载并保存失败: {}", imageUrl, e);
+            return ApiResponse.error("图片下载并保存失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存base64图片到MinIO
+     *
+     * @param base64Image base64编码的图片数据
+     * @return 保存结果
+     */
+    @PostMapping("/upload/base64")
+    public ApiResponse<Map<String, String>> uploadBase64Image(@RequestParam("base64Image") String base64Image) {
+        try {
+            if (base64Image == null || base64Image.trim().isEmpty()) {
+                return ApiResponse.error("Base64图片数据不能为空");
+            }
+
+            String savedFileUrl = fileStorageService.saveBase64Image(base64Image);
+            
+            // 计算原始数据大小（估算）
+            String base64Content = base64Image;
+            if (base64Image.contains(",")) {
+                base64Content = base64Image.substring(base64Image.indexOf(",") + 1);
+            }
+            int estimatedSize = (int) (base64Content.length() * 0.75); // base64解码后大约是原长度的75%
+            
+            Map<String, String> result = new HashMap<>();
+            result.put("savedFileUrl", savedFileUrl);
+            result.put("estimatedSize", String.valueOf(estimatedSize));
+            result.put("message", "Base64图片保存成功");
+
+            return ApiResponse.success("Base64图片保存成功", result);
+        } catch (Exception e) {
+            log.error("Base64图片保存失败", e);
+            return ApiResponse.error("Base64图片保存失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 下载文件
      *
      * @param objectName 对象名称（从URL中提取）
