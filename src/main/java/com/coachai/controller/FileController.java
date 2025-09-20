@@ -147,7 +147,7 @@ public class FileController {
             if (base64Image == null || base64Image.trim().isEmpty()) {
                 return ApiResponse.error("Base64图片数据不能为空");
             }
-
+            log.info("上传base64图片: {}", base64Image);
             String savedFileUrl = fileStorageService.saveBase64Image(base64Image);
             
             // 计算原始数据大小（估算）
