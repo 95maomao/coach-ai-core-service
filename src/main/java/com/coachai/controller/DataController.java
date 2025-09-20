@@ -3,6 +3,8 @@ package com.coachai.controller;
 import com.coachai.common.ApiResponse;
 import com.coachai.dto.DataProcessRequest;
 import com.coachai.dto.DataProcessResponse;
+import com.coachai.dto.PoseAnalysisRequest;
+import com.coachai.dto.PoseAnalysisResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +57,51 @@ public class DataController {
     }
 
     /**
+     * 姿态分析处理方法
+     * 
+     * @param request 包含JSON字符串、Base64字符串和类型的请求对象
+     * @return 根据类型返回不同格式的JSON响应
+     */
+    @PostMapping("/pose-analysis")
+    public ResponseEntity<ApiResponse<PoseAnalysisResponse>> processPoseAnalysis(
+            @RequestBody @Valid PoseAnalysisRequest request) {
+        
+        log.info("接收到姿态分析处理请求，类型: {}", request.getType());
+        
+        try {
+            // 验证type参数
+            if (!"userPoseImage".equals(request.getType()) && !"referencePoseImage".equals(request.getType())) {
+                throw new IllegalArgumentException("type参数必须为 userPoseImage 或 referencePoseImage");
+            }
+            
+            // 根据type提取对应的指令字段
+            String instructions = extractInstructionsByType(request.getJsonString(), request.getType());
+            
+            // 获取base64字符串内容
+            String base64Content = request.getBase64String();
+            
+            // 构造响应
+            PoseAnalysisResponse.PosePart part = new PoseAnalysisResponse.PosePart();
+            part.setImage(base64Content);
+            
+            if ("userPoseImage".equals(request.getType())) {
+                part.setUserPoseImageInstructions(instructions);
+            } else {
+                part.setReferencePoseImageInstructions(instructions);
+            }
+            
+            PoseAnalysisResponse response = new PoseAnalysisResponse("USER", Collections.singletonList(part));
+            
+            log.info("姿态分析处理完成，类型: {}", request.getType());
+            return ResponseEntity.ok(ApiResponse.success("姿态分析处理成功", response));
+            
+        } catch (Exception e) {
+            log.error("姿态分析处理失败", e);
+            return ResponseEntity.ok(ApiResponse.error("姿态分析处理失败: " + e.getMessage()));
+        }
+    }
+
+    /**
      * 从JSON字符串中提取nextNodeImageInstructions字段
      * 
      * @param jsonString JSON字符串
@@ -73,6 +120,40 @@ public class DataController {
             return instructionsNode.asText();
         } catch (Exception e) {
             log.error("解析JSON字符串失败: {}", jsonString, e);
+            throw new Exception("解析JSON字符串失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 根据类型从JSON字符串中提取对应的指令字段
+     * 
+     * @param jsonString JSON字符串
+     * @param type 类型（userPoseImage 或 referencePoseImage）
+     * @return 对应的指令字段值
+     * @throws Exception 解析异常
+     */
+    private String extractInstructionsByType(String jsonString, String type) throws Exception {
+        try {
+            JsonNode jsonNode = objectMapper.readTree(jsonString);
+            JsonNode instructionsNode;
+            
+            if ("userPoseImage".equals(type)) {
+                instructionsNode = jsonNode.get("userPoseImageInstructions");
+                if (instructionsNode == null) {
+                    throw new IllegalArgumentException("JSON中未找到userPoseImageInstructions字段");
+                }
+            } else if ("referencePoseImage".equals(type)) {
+                instructionsNode = jsonNode.get("referencePoseImageInstructions");
+                if (instructionsNode == null) {
+                    throw new IllegalArgumentException("JSON中未找到referencePoseImageInstructions字段");
+                }
+            } else {
+                throw new IllegalArgumentException("不支持的类型: " + type);
+            }
+            
+            return instructionsNode.asText();
+        } catch (Exception e) {
+            log.error("解析JSON字符串失败，类型: {}, JSON: {}", type, jsonString, e);
             throw new Exception("解析JSON字符串失败: " + e.getMessage());
         }
     }
