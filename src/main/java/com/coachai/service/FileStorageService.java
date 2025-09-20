@@ -158,8 +158,14 @@ public class FileStorageService {
             // 解码base64数据
             byte[] fileBytes = Base64.getDecoder().decode(base64Content);
             
-            // 根据MIME类型确定文件扩展名
-            String extension = getExtensionFromMimeType(mimeType);
+            // 根据MIME类型确定文件扩展名，如果MIME类型为空则通过文件头检测
+            String extension;
+            if (mimeType != null) {
+                extension = getExtensionFromMimeType(mimeType);
+            } else {
+                extension = detectFileTypeFromBase64(base64Content);
+                log.info("MIME类型为空，通过文件头检测到文件类型: {}", extension);
+            }
             
             // 生成唯一文件名
             String fileName = generateFileNameWithExtension(extension);
@@ -561,6 +567,61 @@ public class FileStorageService {
                 return ".xml";
             default:
                 return ".bin"; // 默认扩展名
+        }
+    }
+
+    /**
+     * 通过分析base64数据的文件头来检测文件类型
+     *
+     * @param base64Content 纯base64内容（不包含data URL前缀）
+     * @return 文件扩展名
+     */
+    private String detectFileTypeFromBase64(String base64Content) {
+        try {
+            // 解码base64数据的前几个字节来检测文件类型
+            byte[] headerBytes = Base64.getDecoder().decode(base64Content.substring(0, Math.min(base64Content.length(), 20)));
+            
+            // 检查文件魔数（文件头）
+            if (headerBytes.length >= 8) {
+                // PNG: 89 50 4E 47 0D 0A 1A 0A
+                if (headerBytes[0] == (byte) 0x89 && headerBytes[1] == 0x50 && 
+                    headerBytes[2] == 0x4E && headerBytes[3] == 0x47) {
+                    return ".png";
+                }
+                
+                // JPEG: FF D8 FF
+                if (headerBytes[0] == (byte) 0xFF && headerBytes[1] == (byte) 0xD8 && 
+                    headerBytes[2] == (byte) 0xFF) {
+                    return ".jpg";
+                }
+                
+                // GIF: 47 49 46 38 (GIF8)
+                if (headerBytes[0] == 0x47 && headerBytes[1] == 0x49 && 
+                    headerBytes[2] == 0x46 && headerBytes[3] == 0x38) {
+                    return ".gif";
+                }
+                
+                // BMP: 42 4D
+                if (headerBytes[0] == 0x42 && headerBytes[1] == 0x4D) {
+                    return ".bmp";
+                }
+                
+                // WebP: 52 49 46 46 ... 57 45 42 50 (RIFF...WEBP)
+                if (headerBytes.length >= 12 && 
+                    headerBytes[0] == 0x52 && headerBytes[1] == 0x49 && 
+                    headerBytes[2] == 0x46 && headerBytes[3] == 0x46 &&
+                    headerBytes[8] == 0x57 && headerBytes[9] == 0x45 && 
+                    headerBytes[10] == 0x42 && headerBytes[11] == 0x50) {
+                    return ".webp";
+                }
+            }
+            
+            log.debug("无法识别文件类型，文件头: {}", java.util.Arrays.toString(java.util.Arrays.copyOf(headerBytes, Math.min(headerBytes.length, 8))));
+            return ".bin";
+            
+        } catch (Exception e) {
+            log.warn("检测文件类型时发生错误: {}", e.getMessage());
+            return ".bin";
         }
     }
 
