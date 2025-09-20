@@ -2,6 +2,8 @@ server:
   port: 8080
   servlet:
     context-path: /api
+  # HTTP请求大小限制
+  max-http-header-size: 1MB
 
 spring:
   application:
@@ -12,6 +14,10 @@ spring:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
+  
+  # HTTP请求配置
+  mvc:
+    max-request-size: 50MB
   
   # 数据库配置
   datasource:

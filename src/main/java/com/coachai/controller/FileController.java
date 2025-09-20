@@ -1,6 +1,7 @@
 package com.coachai.controller;
 
 import com.coachai.common.ApiResponse;
+import com.coachai.dto.Base64ImageRequest;
 import com.coachai.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -136,7 +137,7 @@ public class FileController {
     }
 
     /**
-     * 保存base64图片到MinIO
+     * 保存base64图片到MinIO (通过请求参数，适用于小数据)
      *
      * @param base64Image base64编码的图片数据
      * @return 保存结果
@@ -147,7 +148,12 @@ public class FileController {
             if (base64Image == null || base64Image.trim().isEmpty()) {
                 return ApiResponse.error("Base64图片数据不能为空");
             }
-            log.info("上传base64图片: {}", base64Image);
+            
+            // 优化日志输出，避免打印完整的base64数据
+            String logData = base64Image.length() > 100 ? 
+                base64Image.substring(0, 100) + "... (长度: " + base64Image.length() + ")" : base64Image;
+            log.info("上传base64图片: {}", logData);
+            
             String savedFileUrl = fileStorageService.saveBase64Image(base64Image);
             
             // 计算原始数据大小（估算）
@@ -160,6 +166,49 @@ public class FileController {
             Map<String, String> result = new HashMap<>();
             result.put("savedFileUrl", savedFileUrl);
             result.put("estimatedSize", String.valueOf(estimatedSize));
+            result.put("message", "Base64图片保存成功");
+
+            return ApiResponse.success("Base64图片保存成功", result);
+        } catch (Exception e) {
+            log.error("Base64图片保存失败", e);
+            return ApiResponse.error("Base64图片保存失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存base64图片到MinIO (通过JSON请求体，适用于大数据)
+     *
+     * @param request base64图片请求对象
+     * @return 保存结果
+     */
+    @PostMapping("/upload/base64-json")
+    public ApiResponse<Map<String, String>> uploadBase64ImageJson(@RequestBody Base64ImageRequest request) {
+        try {
+            if (request == null || request.getBase64Image() == null || request.getBase64Image().trim().isEmpty()) {
+                return ApiResponse.error("Base64图片数据不能为空");
+            }
+            
+            String base64Image = request.getBase64Image();
+            
+            // 优化日志输出，避免打印完整的base64数据
+            String logData = base64Image.length() > 100 ? 
+                base64Image.substring(0, 100) + "... (长度: " + base64Image.length() + ")" : base64Image;
+            log.info("上传base64图片(JSON): {}, 文件名提示: {}", logData, request.getFileName());
+            
+            String savedFileUrl = fileStorageService.saveBase64Image(base64Image);
+            
+            // 计算原始数据大小（估算）
+            String base64Content = base64Image;
+            if (base64Image.contains(",")) {
+                base64Content = base64Image.substring(base64Image.indexOf(",") + 1);
+            }
+            int estimatedSize = (int) (base64Content.length() * 0.75); // base64解码后大约是原长度的75%
+            
+            Map<String, String> result = new HashMap<>();
+            result.put("savedFileUrl", savedFileUrl);
+            result.put("estimatedSize", String.valueOf(estimatedSize));
+            result.put("originalFileName", request.getFileName());
+            result.put("description", request.getDescription());
             result.put("message", "Base64图片保存成功");
 
             return ApiResponse.success("Base64图片保存成功", result);
