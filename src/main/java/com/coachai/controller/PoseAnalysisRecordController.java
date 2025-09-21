@@ -109,6 +109,7 @@ public class PoseAnalysisRecordController {
                     saveResponse.getData().getId(), finalMessage.getOverallScore(),
                     saveResponse.getData().getAnalysisResults().size(),
                     saveResponse.getData().getImprovementResults().size());
+            saveResponse.getData().setOverallScore(finalMessage.getOverallScore());
             
             return ResponseEntity.ok(ApiResponse.success("姿态分析完成", saveResponse.getData()));
             

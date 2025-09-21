@@ -149,4 +149,45 @@ public class CoachAiUserDTO {
                     .build();
         }
     }
+
+    /**
+     * 用于登录的DTO
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class LoginRequest {
+        @NotBlank(message = "用户名不能为空")
+        private String username;
+        
+        @NotBlank(message = "密码不能为空")
+        private String password;
+    }
+
+    /**
+     * 登录响应DTO
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class LoginResponse {
+        private Long id;
+        private String username;
+        private String message;
+        private Long loginTime;
+    }
+
+    /**
+     * 用户名查询响应DTO
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class UsernameResponse {
+        private Long id;
+        private String username;
+    }
 }

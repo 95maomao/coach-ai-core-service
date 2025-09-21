@@ -3,6 +3,7 @@ package com.coachai.controller;
 import com.coachai.common.ApiResponse;
 import com.coachai.dto.Base64ImageRequest;
 import com.coachai.service.FileStorageService;
+import com.coachai.service.ImageCompressionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +25,7 @@ import java.util.Map;
 public class FileController {
 
     private final FileStorageService fileStorageService;
+    private final ImageCompressionService imageCompressionService;
 
     /**
      * 上传图片文件
@@ -356,6 +358,162 @@ public class FileController {
         } catch (Exception e) {
             log.error("代理访问图片失败: {}", objectName, e);
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * 图片压缩测试接口 - 上传并压缩图片
+     *
+     * @param file 图片文件
+     * @param quality 压缩质量 (0.1-1.0，可选，默认智能压缩)
+     * @param maxWidth 最大宽度 (可选，默认1920)
+     * @param maxHeight 最大高度 (可选，默认1920)
+     * @return 压缩结果对比
+     */
+    @PostMapping("/compress/test")
+    public ApiResponse<Map<String, Object>> compressImageTest(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "quality", required = false) Double quality,
+            @RequestParam(value = "maxWidth", required = false, defaultValue = "1920") Integer maxWidth,
+            @RequestParam(value = "maxHeight", required = false, defaultValue = "1920") Integer maxHeight) {
+        try {
+            log.info("接收到图片压缩测试请求: fileName={}, size={}, contentType={}", 
+                    file.getOriginalFilename(), file.getSize(), file.getContentType());
+            
+            if (file.isEmpty()) {
+                return ApiResponse.error("文件不能为空");
+            }
+
+            // 检查是否为图片文件
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ApiResponse.error("仅支持图片文件");
+            }
+
+            long originalSize = file.getSize();
+            byte[] compressedBytes;
+
+            // 根据是否指定质量参数选择压缩方式
+            if (quality != null) {
+                // 自定义压缩参数
+                if (quality < 0.1 || quality > 1.0) {
+                    return ApiResponse.error("压缩质量必须在0.1-1.0之间");
+                }
+                compressedBytes = imageCompressionService.compressImage(file, quality, maxWidth, maxHeight);
+                log.info("使用自定义压缩参数: quality={}, maxSize={}x{}", quality, maxWidth, maxHeight);
+            } else {
+                // 智能压缩
+                compressedBytes = imageCompressionService.smartCompress(file);
+                log.info("使用智能压缩策略");
+            }
+
+            long compressedSize = compressedBytes.length;
+            double compressionRatio = (1 - (double) compressedSize / originalSize) * 100;
+
+            // 构建返回结果
+            Map<String, Object> result = new HashMap<>();
+            result.put("originalFileName", file.getOriginalFilename());
+            result.put("originalSize", originalSize);
+            result.put("originalSizeReadable", formatFileSize(originalSize));
+            result.put("compressedSize", compressedSize);
+            result.put("compressedSizeReadable", formatFileSize(compressedSize));
+            result.put("compressionRatio", String.format("%.1f%%", compressionRatio));
+            result.put("needsCompression", imageCompressionService.needsCompression(originalSize));
+            
+            // 压缩参数信息
+            Map<String, Object> compressionParams = new HashMap<>();
+            compressionParams.put("quality", quality != null ? quality : "智能选择");
+            compressionParams.put("maxWidth", maxWidth);
+            compressionParams.put("maxHeight", maxHeight);
+            compressionParams.put("outputFormat", "JPEG");
+            result.put("compressionParams", compressionParams);
+
+            String message = String.format("图片压缩测试完成，压缩率: %.1f%%", compressionRatio);
+            return ApiResponse.success(message, result);
+
+        } catch (Exception e) {
+            log.error("图片压缩测试失败", e);
+            return ApiResponse.error("图片压缩测试失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 图片压缩并上传测试接口 - 压缩后上传到OSS
+     *
+     * @param file 图片文件
+     * @param quality 压缩质量 (0.1-1.0，可选，默认智能压缩)
+     * @param maxWidth 最大宽度 (可选，默认1920)
+     * @param maxHeight 最大高度 (可选，默认1920)
+     * @return 上传结果
+     */
+    @PostMapping("/compress/upload")
+    public ApiResponse<Map<String, Object>> compressAndUpload(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "quality", required = false) Double quality,
+            @RequestParam(value = "maxWidth", required = false, defaultValue = "1920") Integer maxWidth,
+            @RequestParam(value = "maxHeight", required = false, defaultValue = "1920") Integer maxHeight) {
+        try {
+            log.info("接收到图片压缩上传请求: fileName={}, size={}, contentType={}", 
+                    file.getOriginalFilename(), file.getSize(), file.getContentType());
+            
+            if (file.isEmpty()) {
+                return ApiResponse.error("文件不能为空");
+            }
+
+            // 检查是否为图片文件
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ApiResponse.error("仅支持图片文件");
+            }
+
+            long originalSize = file.getSize();
+            byte[] compressedBytes;
+
+            // 根据是否指定质量参数选择压缩方式
+            if (quality != null) {
+                if (quality < 0.1 || quality > 1.0) {
+                    return ApiResponse.error("压缩质量必须在0.1-1.0之间");
+                }
+                compressedBytes = imageCompressionService.compressImage(file, quality, maxWidth, maxHeight);
+            } else {
+                compressedBytes = imageCompressionService.smartCompress(file);
+            }
+
+            // TODO: 这里需要创建一个临时的MultipartFile来上传压缩后的图片
+            // 暂时返回压缩信息，实际上传功能需要进一步实现
+            
+            long compressedSize = compressedBytes.length;
+            double compressionRatio = (1 - (double) compressedSize / originalSize) * 100;
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("originalFileName", file.getOriginalFilename());
+            result.put("originalSize", originalSize);
+            result.put("originalSizeReadable", formatFileSize(originalSize));
+            result.put("compressedSize", compressedSize);
+            result.put("compressedSizeReadable", formatFileSize(compressedSize));
+            result.put("compressionRatio", String.format("%.1f%%", compressionRatio));
+            result.put("message", "图片压缩完成，准备上传功能需要进一步实现");
+
+            return ApiResponse.success("图片压缩完成", result);
+
+        } catch (Exception e) {
+            log.error("图片压缩上传失败", e);
+            return ApiResponse.error("图片压缩上传失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 格式化文件大小显示
+     */
+    private String formatFileSize(long size) {
+        if (size < 1024) {
+            return size + " B";
+        } else if (size < 1024 * 1024) {
+            return String.format("%.1f KB", size / 1024.0);
+        } else if (size < 1024 * 1024 * 1024) {
+            return String.format("%.1f MB", size / (1024.0 * 1024.0));
+        } else {
+            return String.format("%.1f GB", size / (1024.0 * 1024.0 * 1024.0));
         }
     }
 

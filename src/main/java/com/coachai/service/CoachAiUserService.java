@@ -60,4 +60,14 @@ public interface CoachAiUserService {
      * 删除用户
      */
     ApiResponse<Void> deleteUser(Long id);
+    
+    /**
+     * 用户登录
+     */
+    ApiResponse<CoachAiUserDTO.LoginResponse> loginUser(CoachAiUserDTO.LoginRequest loginRequest);
+    
+    /**
+     * 根据用户ID获取用户名
+     */
+    ApiResponse<CoachAiUserDTO.UsernameResponse> getUsernameById(Long id);
 }

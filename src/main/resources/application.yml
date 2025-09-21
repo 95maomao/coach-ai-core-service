@@ -74,6 +74,40 @@ oss:
     documents: documents/
     temp: temp/
 
+# 图片压缩配置
+image:
+  compression:
+    # 是否启用图片压缩
+    enabled: true
+    # 默认压缩质量 (0.1-1.0)
+    default-quality: 0.8
+    # 最大宽度
+    max-width: 1920
+    # 最大高度
+    max-height: 1920
+    # 压缩阈值，超过此大小的图片将被压缩 (单位: 字节)
+    compression-threshold: 524288  # 512KB
+    # 智能压缩策略
+    smart-compression:
+      # 大文件 (>5MB) 压缩参数
+      large-file:
+        size-threshold: 5242880    # 5MB
+        quality: 0.6
+        max-width: 1920
+        max-height: 1920
+      # 中等文件 (>2MB) 压缩参数  
+      medium-file:
+        size-threshold: 2097152    # 2MB
+        quality: 0.7
+        max-width: 1920
+        max-height: 1920
+      # 小文件 (>500KB) 压缩参数
+      small-file:
+        size-threshold: 524288     # 512KB
+        quality: 0.8
+        max-width: 1920
+        max-height: 1920
+
 # AI工作流配置
 ai:
   workflow:
