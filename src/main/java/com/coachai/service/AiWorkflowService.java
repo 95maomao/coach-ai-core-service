@@ -38,7 +38,15 @@ public interface AiWorkflowService {
      * 解析症状分析工作流响应结果
      *
      * @param response AI工作流响应
-     * @return 解析后的最终消息
+     * @return 解析后的结构化数据
      */
     AiWorkflowIssueResponse.StructData parseIssueWorkflowResponse(AiWorkflowIssueResponse response);
+
+    /**
+     * 从StructData中解析DiagnosisData
+     *
+     * @param structData 结构化数据
+     * @return 解析后的诊断数据
+     */
+    AiWorkflowIssueResponse.DiagnosisData parseDiagnosisData(AiWorkflowIssueResponse.StructData structData);
 }
