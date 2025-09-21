@@ -409,12 +409,12 @@ public class OssFileStorageService implements FileStorageService {
 
     /**
      * 获取文件访问URL
-     * 由于OSS强制设置Content-Disposition为attachment，我们使用应用代理URL
+     * 返回阿里云OSS的直接访问URL
      */
     private String getFileUrl(String objectName) {
-        // 使用应用服务器代理URL，这样可以控制Content-Disposition
-        // 格式: http://your-domain/api/files/proxy/images/filename.jpg
-        return "/api/files/proxy/" + objectName;
+        // 使用OSS配置中的基础URL生成完整的文件访问URL
+        // 格式: https://bucket-name.oss-region.aliyuncs.com/path/filename.jpg
+        return ossConfig.getBaseUrl() + "/" + objectName;
     }
 
     /**
