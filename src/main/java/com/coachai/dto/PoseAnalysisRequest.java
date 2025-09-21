@@ -1,30 +1,44 @@
 package com.coachai.dto;
 
+import com.coachai.entity.CoachAiUser.PreferredSport;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 /**
  * 姿态分析请求DTO
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PoseAnalysisRequest {
     
     /**
-     * JSON字符串参数（包含分析结果）
+     * 图片链接
      */
-    @NotBlank(message = "JSON字符串不能为空")
-    private String jsonString;
+    @NotBlank(message = "图片链接不能为空")
+    private String imageLink;
     
     /**
-     * Base64字符串参数（图片数据）
+     * 用户名
      */
-    @NotBlank(message = "Base64字符串不能为空")
-    private String base64String;
+    @NotBlank(message = "用户名不能为空")
+    private String username;
     
     /**
-     * 类型参数（userPoseImage 或 referencePoseImage）
+     * 运动类型
      */
-    @NotBlank(message = "类型参数不能为空")
-    private String type;
+    @NotNull(message = "运动类型不能为空")
+    private PreferredSport sport;
+    
+    /**
+     * 姿势
+     */
+    @NotBlank(message = "姿势不能为空")
+    private String posture;
 }

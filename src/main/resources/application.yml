@@ -54,6 +54,18 @@ minio:
     documents: documents/
     temp: temp/
 
+# AI工作流配置
+ai:
+  workflow:
+    # 基础配置
+    base-url: https://apaas.alibaba-inc.com/common/invoke
+    timeout: 120000  # 2分钟超时，单位毫秒
+    
+    # 姿态分析工作流配置
+    pose-analysis:
+      api-code: 360000000003870008
+      ak: 445752-b3f1-mbs3Z1OiBL2u4fo5NDwe
+
 # 日志配置
 logging:
   level:
