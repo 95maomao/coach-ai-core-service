@@ -101,39 +101,33 @@ public class DataController {
     }
 
     private String generatePoseImageInstructions(String instructions, String imageUrl) {
-        // "userPoseImageContent": {
-        //    "role": "USER",
-        //    "parts": [
-        //        {
-        //            "file_data": {
-        //                "mime_type": "image/jpeg",
-        //                 "file_uri": "https://img.mrvcdn.com/us/media/cd5b386e2f81f0cf894c78c031e1b4a4-275-183.jpeg"
-        //            }
-        //        },
-        //        {
-        //            "text": "Please add the text label “hello” to this image and return the generated image."
-        //        }
-        //    ]
-        //}
-        Map<String, String> poseImageInstructions = new HashMap<>();
-        ArrayList<String> parts = new ArrayList<>();
+        // 构建期望的数据结构
+        Map<String, Object> response = new HashMap<>();
+        response.put("role", "user");
 
-        Map<String,String> file_data = new HashMap<>();
-        file_data.put("mime_type", "image/jpeg");
-        file_data.put("file_uri", imageUrl);
+        List<Map<String, Object>> parts = new ArrayList<>();
 
-        Map<String,String> partFileData = new HashMap<>();
-        partFileData.put("file_data", JSONObject.toJSONString(file_data));
+        // 添加文本部分
+        Map<String, Object> textPart = new HashMap<>();
+        textPart.put("text", instructions);
+        parts.add(textPart);
 
-        Map<String,String> text = new HashMap<>();
-        text.put("text", instructions);
+        // 添加文件数据部分
+        Map<String, Object> filePart = new HashMap<>();
+        Map<String, Object> fileData = new HashMap<>();
+        fileData.put("mimeType", "image/jpeg");
+        fileData.put("fileUri", imageUrl);
+        filePart.put("fileData", fileData);
+        parts.add(filePart);
 
-        parts.add(JSONObject.toJSONString(partFileData));
-        parts.add(JSONObject.toJSONString(text));
+        response.put("parts", parts);
 
-        poseImageInstructions.put("role", "USER");
-        poseImageInstructions.put("parts", JSONObject.toJSONString(parts));
-        return JSONObject.toJSONString(poseImageInstructions);
+        try {
+            return objectMapper.writeValueAsString(response);
+        } catch (Exception e) {
+            log.error("生成姿态图片指令失败", e);
+            throw new RuntimeException("生成姿态图片指令失败: " + e.getMessage());
+        }
     }
 
 
