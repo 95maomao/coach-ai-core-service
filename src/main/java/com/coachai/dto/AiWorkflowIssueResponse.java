@@ -131,7 +131,7 @@ public class AiWorkflowIssueResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public class DiagnosisData {
+    public static class DiagnosisData {
         private String sport;
         private List<String> posture;
         private String riskLevel;
@@ -146,7 +146,7 @@ public class AiWorkflowIssueResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public class Symptom {
+    public static class Symptom {
         private String name;
         private String severity;
         private String cause;
@@ -156,7 +156,7 @@ public class AiWorkflowIssueResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public class Treatment {
+    public static class Treatment {
         private List<String> prevention;
         private List<String> immediate;
         private List<String> recovery;
