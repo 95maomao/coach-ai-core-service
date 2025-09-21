@@ -140,6 +140,8 @@ public class AiWorkflowIssueResponse {
         private boolean isNormal;
         private List<Symptom> symptoms;
         private Treatment treatment;
+        private List<PoseReference> poseReference;
+        private List<RehabilitationVideo> rehabilitationVideos;
     }
 
     @Data
@@ -161,6 +163,30 @@ public class AiWorkflowIssueResponse {
         private List<String> immediate;
         private List<String> recovery;
         private List<String> followUp;
+    }
+
+    /**
+     * 姿势参考结构体
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class PoseReference {
+        private String name;
+        private String video;
+    }
+
+    /**
+     * 康复视频结构体
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class RehabilitationVideo {
+        private String name;
+        private String video;
     }
 
 }

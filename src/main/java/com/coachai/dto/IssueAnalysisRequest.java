@@ -16,6 +16,8 @@ import java.util.List;
 @Builder
 public class IssueAnalysisRequest {
 
+    private String username;
+
     private List<String> bodyParts;
 
     private String sport;
