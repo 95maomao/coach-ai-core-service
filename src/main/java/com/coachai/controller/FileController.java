@@ -34,6 +34,9 @@ public class FileController {
     @PostMapping("/upload/image")
     public ApiResponse<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
+            log.info("接收到图片上传请求: fileName={}, size={}, contentType={}", 
+                    file.getOriginalFilename(), file.getSize(), file.getContentType());
+            
             if (file.isEmpty()) {
                 return ApiResponse.error("文件不能为空");
             }
@@ -315,6 +318,76 @@ public class FileController {
         } catch (Exception e) {
             log.error("生成预签名URL失败: {}", objectName, e);
             return ApiResponse.error("生成预签名URL失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 图片代理访问接口
+     * 通过应用服务器代理OSS图片，设置正确的Content-Disposition
+     *
+     * @param objectName 对象名称（如：images/20250921123044_dd060b89.png）
+     * @return 图片数据流
+     */
+    @GetMapping("/proxy/{path:.+}")
+    public ResponseEntity<byte[]> proxyImage(@PathVariable("path") String objectName) {
+        try {
+            log.info("代理访问图片: {}", objectName);
+            
+            // 从OSS下载文件
+            byte[] imageBytes = fileStorageService.downloadFileAsBytes(objectName);
+            
+            // 根据文件扩展名设置Content-Type
+            String contentType = getContentTypeByExtension(objectName);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(contentType));
+            headers.setContentLength(imageBytes.length);
+            headers.setCacheControl("public, max-age=31536000"); // 1年缓存
+            // 设置为inline，让浏览器直接显示
+            headers.set("Content-Disposition", "inline");
+            
+            log.info("代理返回图片: {}, Content-Type: {}, 大小: {} bytes", 
+                    objectName, contentType, imageBytes.length);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(imageBytes);
+                    
+        } catch (Exception e) {
+            log.error("代理访问图片失败: {}", objectName, e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * 根据文件扩展名获取Content-Type
+     */
+    private String getContentTypeByExtension(String fileName) {
+        if (fileName == null) {
+            return "application/octet-stream";
+        }
+        
+        String extension = "";
+        if (fileName.contains(".")) {
+            extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+        }
+        
+        switch (extension) {
+            case ".jpg":
+            case ".jpeg":
+                return "image/jpeg";
+            case ".png":
+                return "image/png";
+            case ".gif":
+                return "image/gif";
+            case ".webp":
+                return "image/webp";
+            case ".bmp":
+                return "image/bmp";
+            case ".svg":
+                return "image/svg+xml";
+            default:
+                return "image/jpeg";
         }
     }
 }

@@ -80,11 +80,11 @@
             <version>2.3.1</version>
         </dependency>
         
-        <!-- MinIO Java Client -->
+        <!-- 阿里云OSS Java SDK -->
         <dependency>
-            <groupId>io.minio</groupId>
-            <artifactId>minio</artifactId>
-            <version>8.5.7</version>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+            <version>3.17.4</version>
         </dependency>
         
         <!-- Apache Commons IO for file operations -->

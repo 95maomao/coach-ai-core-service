@@ -191,31 +191,48 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
             // 获取StructData
             AiWorkflowIssueResponse.StructData structData = parsedResult.getData().getStructData();
             
-            // 第二层解析：从 structData.message 中解析出 DiagnosisData
-            if (structData.getMessage() != null) {
-                String messageJson = objectMapper.writeValueAsString(structData.getMessage());
-                log.debug("第二层JSON: {}", messageJson);
-
-                AiWorkflowIssueResponse.DiagnosisData diagnosisData = objectMapper.readValue(messageJson, AiWorkflowIssueResponse.DiagnosisData.class);
-                
-                if (diagnosisData != null) {
-                    // 将解析后的DiagnosisData设置回StructData
-                    structData.setMessage(diagnosisData);
-                    
-                    log.info("AI症状分析工作流响应解析成功，运动: {}, 风险等级: {}, 主要诊断: {}, 置信度: {}, 是否正常: {}",
-                            diagnosisData.getSport(),
-                            diagnosisData.getRiskLevel(),
-                            diagnosisData.getPrimaryDiagnosis(),
-                            diagnosisData.getConfidence(),
-                            diagnosisData.isNormal());
-                }
-            }
+            log.info("AI症状分析工作流响应解析成功，获得StructData: poseReference数量={}, message长度={}, rehabilitationVideos数量={}",
+                    structData.getPoseReference() != null ? structData.getPoseReference().size() : 0,
+                    structData.getMessage() != null ? structData.getMessage().length() : 0,
+                    structData.getRehabilitationVideos() != null ? structData.getRehabilitationVideos().size() : 0);
 
             return structData;
 
         } catch (Exception e) {
             log.error("解析AI症状分析工作流响应失败", e);
             throw new RuntimeException("解析AI症状分析工作流响应失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public AiWorkflowIssueResponse.DiagnosisData parseDiagnosisData(AiWorkflowIssueResponse.StructData structData) {
+        try {
+            log.info("开始解析DiagnosisData");
+
+            if (structData == null || structData.getMessage() == null) {
+                throw new RuntimeException("StructData或message为空");
+            }
+
+            // 从 message 字段解析出 DiagnosisData
+            String messageJson = structData.getMessage();
+            log.debug("DiagnosisData JSON: {}", messageJson);
+
+            AiWorkflowIssueResponse.DiagnosisData diagnosisData = objectMapper.readValue(messageJson, AiWorkflowIssueResponse.DiagnosisData.class);
+
+            if (diagnosisData != null) {
+                log.info("DiagnosisData解析成功，运动: {}, 风险等级: {}, 主要诊断: {}, 置信度: {}, 是否正常: {}",
+                        diagnosisData.getSport(),
+                        diagnosisData.getRiskLevel(),
+                        diagnosisData.getPrimaryDiagnosis(),
+                        diagnosisData.getConfidence(),
+                        diagnosisData.isNormal());
+            }
+
+            return diagnosisData;
+
+        } catch (Exception e) {
+            log.error("解析DiagnosisData失败", e);
+            throw new RuntimeException("解析DiagnosisData失败: " + e.getMessage(), e);
         }
     }
 }

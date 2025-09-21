@@ -37,13 +37,21 @@ spring:
         format_sql: true
     open-in-view: false
 
-# MinIO 文件存储配置
-minio:
-  endpoint: ${MINIO_ENDPOINT:http://120.77.56.132:9000}
-  access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:minioadmin123}
-  bucket-name: ${MINIO_BUCKET_NAME:coach-ai-files}
-  secure: ${MINIO_SECURE:false}
+# 阿里云OSS 文件存储配置
+oss:
+  endpoint: ${OSS_ENDPOINT:https://oss-cn-shenzhen.aliyuncs.com}
+  access-key-id: ${OSS_ACCESS_KEY_ID}
+  access-key-secret: ${OSS_ACCESS_KEY_SECRET}
+  bucket-name: ${OSS_BUCKET_NAME:cri-537ixr7zm3jj17zu-registry}
+  region: ${OSS_REGION:cn-shenzhen}
+  secure: ${OSS_SECURE:true}
+  # CDN域名（可选）
+  cdn-domain: ${OSS_CDN_DOMAIN:}
+  # 自定义域名（可选）
+  custom-domain: ${OSS_CUSTOM_DOMAIN:}
+  # 连接配置
+  connection-timeout: ${OSS_CONNECTION_TIMEOUT:50000}
+  socket-timeout: ${OSS_SOCKET_TIMEOUT:50000}
   # 文件上传配置
   upload:
     max-file-size: 20MB
