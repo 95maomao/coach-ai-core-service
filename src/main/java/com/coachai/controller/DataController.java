@@ -153,15 +153,28 @@ public class DataController {
     private String extractInstructionsByType(String jsonString, String type) throws Exception {
         try {
             JsonNode jsonNode = objectMapper.readTree(jsonString);
+            // 首先检查是否有answer字段
+            JsonNode answerNode = jsonNode.get("answer");
+            JsonNode targetNode;
+
+            if (answerNode != null) {
+                // 如果有answer字段，解析其中的JSON字符串
+                String answerJsonString = answerNode.asText();
+                targetNode = objectMapper.readTree(answerJsonString);
+            } else {
+                // 如果没有answer字段，直接在顶层查找
+                targetNode = jsonNode;
+            }
+
             JsonNode instructionsNode;
 
             if ("userPoseImage".equals(type)) {
-                instructionsNode = jsonNode.get("userPoseImageInstructions");
+                instructionsNode = targetNode.get("userPoseImageInstructions");
                 if (instructionsNode == null) {
                     throw new IllegalArgumentException("JSON中未找到userPoseImageInstructions字段");
                 }
             } else if ("referencePoseImage".equals(type)) {
-                instructionsNode = jsonNode.get("referencePoseImageInstructions");
+                instructionsNode = targetNode.get("referencePoseImageInstructions");
                 if (instructionsNode == null) {
                     throw new IllegalArgumentException("JSON中未找到referencePoseImageInstructions字段");
                 }
