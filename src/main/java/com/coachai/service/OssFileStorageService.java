@@ -4,6 +4,7 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.model.*;
 import com.coachai.config.OssConfig;
+import com.coachai.util.CompressedMultipartFile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class OssFileStorageService implements FileStorageService {
 
     private final OSS ossClient;
     private final OssConfig ossConfig;
+    private final ImageCompressionService imageCompressionService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -40,15 +42,44 @@ public class OssFileStorageService implements FileStorageService {
                 throw new IllegalArgumentException("文件类型不支持，仅支持图片文件");
             }
 
-            String fileName = generateFileName(file.getOriginalFilename());
+            long originalSize = file.getSize();
+            log.info("开始上传图片: fileName={}, originalSize={} bytes", file.getOriginalFilename(), originalSize);
+
+            // 智能压缩图片
+            MultipartFile processedFile = file;
+            if (imageCompressionService.needsCompression(originalSize)) {
+                try {
+                    byte[] compressedBytes = imageCompressionService.smartCompress(file);
+                    
+                    // 生成压缩后的文件名，统一为.jpg格式
+                    String originalFilename = file.getOriginalFilename();
+                    String baseFilename = originalFilename != null && originalFilename.contains(".") 
+                        ? originalFilename.substring(0, originalFilename.lastIndexOf(".")) 
+                        : originalFilename;
+                    String compressedFilename = baseFilename + "_compressed.jpg";
+                    
+                    processedFile = new CompressedMultipartFile(compressedBytes, compressedFilename, "image/jpeg");
+                    
+                    double compressionRatio = (1 - (double) compressedBytes.length / originalSize) * 100;
+                    log.info("图片压缩完成: originalSize={} bytes, compressedSize={} bytes, compression={}%", 
+                            originalSize, compressedBytes.length, String.format("%.1f", compressionRatio));
+                } catch (Exception e) {
+                    log.warn("图片压缩失败，使用原图上传: {}", e.getMessage());
+                    // 压缩失败时使用原图
+                }
+            } else {
+                log.info("图片无需压缩，直接上传: {} bytes", originalSize);
+            }
+
+            String fileName = generateFileName(processedFile.getOriginalFilename());
             String objectName = ossConfig.getPaths().getImages() + fileName;
 
             // 创建上传请求
             ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(file.getSize());
+            metadata.setContentLength(processedFile.getSize());
             
             // 确保图片文件有正确的Content-Type
-            String contentType = file.getContentType();
+            String contentType = processedFile.getContentType();
             if (contentType == null || contentType.equals("application/octet-stream")) {
                 contentType = getContentTypeByExtension(fileName);
             }
@@ -60,19 +91,19 @@ public class OssFileStorageService implements FileStorageService {
 
             // 记录元数据信息用于调试
             log.info("上传图片元数据: fileName={}, contentType={}, contentDisposition={}, size={}", 
-                    fileName, contentType, "inline", file.getSize());
+                    fileName, contentType, "inline", processedFile.getSize());
 
             // 上传文件
             PutObjectRequest putRequest = new PutObjectRequest(
                     ossConfig.getBucketName(),
                     objectName,
-                    file.getInputStream(),
+                    processedFile.getInputStream(),
                     metadata
             );
 
             ossClient.putObject(putRequest);
 
-            log.info("图片上传成功: {}", objectName);
+            log.info("图片上传成功: {} (最终大小: {} bytes)", objectName, processedFile.getSize());
             return getFileUrl(objectName);
 
         } catch (Exception e) {
