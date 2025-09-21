@@ -5,6 +5,7 @@ import com.coachai.config.AiWorkflowConfig;
 import com.coachai.dto.*;
 import com.coachai.service.AiWorkflowService;
 import com.coachai.service.IssueAnalysisRecordService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -80,7 +82,22 @@ public class IssueAnalysisRecordController {
                 if (structData.getPoseReference() != null) {
                     for (String poseRefJson : structData.getPoseReference()) {
                         try {
-                            AiWorkflowIssueResponse.PoseReference poseRef = objectMapper.readValue(poseRefJson, AiWorkflowIssueResponse.PoseReference.class);
+                            // 先解析为JsonNode以便处理video字段
+                            JsonNode poseRefNode = objectMapper.readTree(poseRefJson);
+                            String name = poseRefNode.get("name").asText();
+                            String videoString = poseRefNode.get("video").asText();
+                            
+                            // 将video字符串按"|"分割，只取第一个URL
+                            String firstVideo = Arrays.stream(videoString.split("\\|"))
+                                    .map(String::trim)
+                                    .filter(s -> !s.isEmpty())
+                                    .findFirst()
+                                    .orElse("");
+                            
+                            AiWorkflowIssueResponse.PoseReference poseRef = AiWorkflowIssueResponse.PoseReference.builder()
+                                    .name(name)
+                                    .video(firstVideo)
+                                    .build();
                             parsedPoseReferences.add(poseRef);
                         } catch (Exception e) {
                             log.warn("解析poseReference失败: {}, JSON: {}", e.getMessage(), poseRefJson);
@@ -93,7 +110,22 @@ public class IssueAnalysisRecordController {
                 if (structData.getRehabilitationVideos() != null) {
                     for (String rehabVideoJson : structData.getRehabilitationVideos()) {
                         try {
-                            AiWorkflowIssueResponse.RehabilitationVideo rehabVideo = objectMapper.readValue(rehabVideoJson, AiWorkflowIssueResponse.RehabilitationVideo.class);
+                            // 先解析为JsonNode以便处理video字段
+                            JsonNode rehabVideoNode = objectMapper.readTree(rehabVideoJson);
+                            String name = rehabVideoNode.get("name").asText();
+                            String videoString = rehabVideoNode.get("video").asText();
+                            
+                            // 将video字符串按"|"分割，只取第一个URL
+                            String firstVideo = Arrays.stream(videoString.split("\\|"))
+                                    .map(String::trim)
+                                    .filter(s -> !s.isEmpty())
+                                    .findFirst()
+                                    .orElse("");
+                            
+                            AiWorkflowIssueResponse.RehabilitationVideo rehabVideo = AiWorkflowIssueResponse.RehabilitationVideo.builder()
+                                    .name(name)
+                                    .video(firstVideo)
+                                    .build();
                             parsedRehabVideos.add(rehabVideo);
                         } catch (Exception e) {
                             log.warn("解析rehabilitationVideo失败: {}, JSON: {}", e.getMessage(), rehabVideoJson);

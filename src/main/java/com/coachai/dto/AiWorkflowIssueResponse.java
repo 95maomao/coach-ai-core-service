@@ -174,7 +174,7 @@ public class AiWorkflowIssueResponse {
     @Builder
     public static class PoseReference {
         private String name;
-        private String video;
+        private String video; // 只返回第一个视频URL
     }
 
     /**
@@ -186,7 +186,7 @@ public class AiWorkflowIssueResponse {
     @Builder
     public static class RehabilitationVideo {
         private String name;
-        private String video;
+        private String video; // 只返回第一个视频URL
     }
 
 }
