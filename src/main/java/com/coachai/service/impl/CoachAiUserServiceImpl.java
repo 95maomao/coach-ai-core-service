@@ -35,6 +35,17 @@ public class CoachAiUserServiceImpl implements CoachAiUserService {
         return Base64.getEncoder().encodeToString(password.getBytes());
     }
 
+    /**
+     * 验证密码
+     */
+    private boolean verifyPassword(String inputPassword, String storedPasswordHash) {
+        if (inputPassword == null || storedPasswordHash == null) {
+            return false;
+        }
+        String encodedInput = Base64.getEncoder().encodeToString(inputPassword.getBytes());
+        return encodedInput.equals(storedPasswordHash);
+    }
+
     @Override
     @Transactional
     public ApiResponse<CoachAiUserDTO.QueryResponse> registerUser(CoachAiUserDTO.RegisterRequest registerRequest) {
@@ -185,5 +196,49 @@ public class CoachAiUserServiceImpl implements CoachAiUserService {
         
         log.info("用户删除成功: {}", id);
         return ApiResponse.success("用户删除成功", null);
+    }
+
+    @Override
+    public ApiResponse<CoachAiUserDTO.LoginResponse> loginUser(CoachAiUserDTO.LoginRequest loginRequest) {
+        log.info("用户登录请求: {}", loginRequest.getUsername());
+        
+        // 查找用户
+        CoachAiUser user = coachAiUserRepository.findByUsername(loginRequest.getUsername())
+                .orElse(null);
+        
+        if (user == null) {
+            return ApiResponse.error("用户名或密码错误");
+        }
+        
+        // 验证密码
+        if (!verifyPassword(loginRequest.getPassword(), user.getPasswordHash())) {
+            return ApiResponse.error("用户名或密码错误");
+        }
+        
+        // 构建登录响应
+        CoachAiUserDTO.LoginResponse loginResponse = CoachAiUserDTO.LoginResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .message("登录成功")
+                .loginTime(System.currentTimeMillis())
+                .build();
+        
+        log.info("用户登录成功: {}", user.getUsername());
+        return ApiResponse.success("登录成功", loginResponse);
+    }
+
+    @Override
+    public ApiResponse<CoachAiUserDTO.UsernameResponse> getUsernameById(Long id) {
+        log.info("根据ID查询用户名: {}", id);
+        
+        CoachAiUser user = coachAiUserRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("用户不存在"));
+        
+        CoachAiUserDTO.UsernameResponse response = CoachAiUserDTO.UsernameResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .build();
+        
+        return ApiResponse.success(response);
     }
 }

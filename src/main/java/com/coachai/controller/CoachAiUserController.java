@@ -38,12 +38,33 @@ public class CoachAiUserController {
     }
 
     /**
+     * 用户登录
+     */
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<CoachAiUserDTO.LoginResponse>> loginUser(
+            @RequestBody @Valid CoachAiUserDTO.LoginRequest loginRequest) {
+        log.info("接收到用户登录请求: {}", loginRequest.getUsername());
+        ApiResponse<CoachAiUserDTO.LoginResponse> response = coachAiUserService.loginUser(loginRequest);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 根据ID查询用户
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CoachAiUserDTO.QueryResponse>> getUserById(@PathVariable Long id) {
         log.info("接收到根据ID查询用户请求: {}", id);
         ApiResponse<CoachAiUserDTO.QueryResponse> response = coachAiUserService.getUserById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 根据用户ID获取用户名
+     */
+    @GetMapping("/{id}/username")
+    public ResponseEntity<ApiResponse<CoachAiUserDTO.UsernameResponse>> getUsernameById(@PathVariable Long id) {
+        log.info("接收到根据ID查询用户名请求: {}", id);
+        ApiResponse<CoachAiUserDTO.UsernameResponse> response = coachAiUserService.getUsernameById(id);
         return ResponseEntity.ok(response);
     }
 
