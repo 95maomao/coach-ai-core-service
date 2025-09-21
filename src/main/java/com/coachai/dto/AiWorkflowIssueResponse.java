@@ -119,8 +119,8 @@ public class AiWorkflowIssueResponse {
         // 标准运动姿势参考
         private String poseReference;
 
-        // 症状描述
-        private DiagnosisData message;
+        // 症状描述（JSON字符串形式）
+        private String message;
 
         // 康复视频
         private String rehabilitationVideos;

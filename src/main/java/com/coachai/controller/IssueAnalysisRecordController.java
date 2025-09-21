@@ -4,18 +4,12 @@ import com.coachai.common.ApiResponse;
 import com.coachai.config.AiWorkflowConfig;
 import com.coachai.dto.*;
 import com.coachai.service.AiWorkflowService;
-import com.coachai.service.PoseAnalysisRecordService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * 症状分析记录Controller
@@ -26,10 +20,8 @@ import java.util.Map;
 @Slf4j
 public class IssueAnalysisRecordController {
 
-    private final PoseAnalysisRecordService poseAnalysisRecordService;
     private final AiWorkflowService aiWorkflowService;
     private final AiWorkflowConfig aiWorkflowConfig;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 姿态分析接口
@@ -38,7 +30,7 @@ public class IssueAnalysisRecordController {
      * @return 姿态分析结果
      */
     @PostMapping("/analyze")
-    public ResponseEntity<ApiResponse<PoseAnalysisRecordDTO.QueryResponse>> processPoseAnalysis(
+    public ResponseEntity<ApiResponse<AiWorkflowIssueResponse.DiagnosisData>> processPoseAnalysis(
             @RequestBody @Valid IssueAnalysisRequest request) {
         
         log.info("接收到姿态分析请求: username={}, sport={}, posture={}, imageLink={}", 
@@ -66,11 +58,13 @@ public class IssueAnalysisRecordController {
             // 4. 解析AI工作流响应
             AiWorkflowIssueResponse.StructData structData = aiWorkflowService.parseIssueWorkflowResponse(aiResponse);
             
-            // 5. 提取图片链接（从解析结果中获取）
-            AiWorkflowResponse.ParsedResult parsedResult = objectMapper.readValue(
-                    aiResponse.getData().getResult(), AiWorkflowResponse.ParsedResult.class);
-            String userPoseImage = parsedResult.getData().getStructData().getUserPoseImage();
-            String referencePoseImage = parsedResult.getData().getStructData().getReferencePoseImage();
+            // 5. 解析DiagnosisData
+            AiWorkflowIssueResponse.DiagnosisData diagnosisData = aiWorkflowService.parseDiagnosisData(structData);
+            
+            log.info("症状分析完成，诊断结果: {}, 风险等级: {}, 置信度: {}%", 
+                    diagnosisData.getPrimaryDiagnosis(), 
+                    diagnosisData.getRiskLevel(), 
+                    diagnosisData.getConfidence());
             
             // 6. 将结果存储到数据库
 //            PoseAnalysisRecordDTO.CreateRequest createRequest = PoseAnalysisRecordDTO.CreateRequest.builder()
@@ -94,8 +88,7 @@ public class IssueAnalysisRecordController {
 //            log.info("姿态分析完成并保存成功: recordId={}, overallScore={}",
 //                    saveResponse.getData().getId(), finalMessage.getOverallScore());
 //
-//            return ResponseEntity.ok(ApiResponse.success("姿态分析完成", saveResponse.getData()));
-            return null;
+            return ResponseEntity.ok(ApiResponse.success("姿态分析完成", diagnosisData));
             
         } catch (Exception e) {
             log.error("姿态分析失败", e);
