@@ -36,10 +36,10 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
                     request.getParamJson().getSport(),
                     request.getParamJson().getPosture());
             
-            // 创建RestTemplate并设置超时
+            // 创建RestTemplate并设置分离的超时配置
             RestTemplate restTemplate = restTemplateBuilder
-                    .setConnectTimeout(Duration.ofMillis(aiWorkflowConfig.getTimeout()))
-                    .setReadTimeout(Duration.ofMillis(aiWorkflowConfig.getTimeout()))
+                    .setConnectTimeout(Duration.ofMillis(aiWorkflowConfig.getConnectionTimeout()))  // 连接超时60秒
+                    .setReadTimeout(Duration.ofMillis(aiWorkflowConfig.getReadTimeout()))           // 读取超时5分钟
                     .build();
             
             // 设置请求头
@@ -125,10 +125,10 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
                     request.getParamJson().getPosture(),
                     request.getParamJson().getDescription());
 
-            // 创建RestTemplate并设置超时
+            // 创建RestTemplate并设置分离的超时配置
             RestTemplate restTemplate = restTemplateBuilder
-                    .setConnectTimeout(Duration.ofMillis(aiWorkflowConfig.getTimeout()))
-                    .setReadTimeout(Duration.ofMillis(aiWorkflowConfig.getTimeout()))
+                    .setConnectTimeout(Duration.ofMillis(aiWorkflowConfig.getConnectionTimeout()))  // 连接超时60秒
+                    .setReadTimeout(Duration.ofMillis(aiWorkflowConfig.getReadTimeout()))           // 读取超时5分钟
                     .build();
 
             // 设置请求头

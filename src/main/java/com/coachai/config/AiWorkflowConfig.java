@@ -18,8 +18,19 @@ public class AiWorkflowConfig {
     private String baseUrl;
     
     /**
-     * 超时时间（毫秒）
+     * 连接超时时间（毫秒）
      */
+    private Long connectionTimeout = 60000L;  // 60秒
+    
+    /**
+     * 读取超时时间（毫秒）
+     */
+    private Long readTimeout = 300000L;       // 5分钟
+    
+    /**
+     * @deprecated 使用 connectionTimeout 和 readTimeout 替代
+     */
+    @Deprecated
     private Long timeout;
     
     /**
