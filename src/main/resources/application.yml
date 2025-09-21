@@ -66,6 +66,11 @@ ai:
       api-code: 360000000003870008
       ak: 445752-b3f1-mbs3Z1OiBL2u4fo5NDwe
 
+    # 症状分析工作流配置
+    issue-analysis:
+      api-code: 360000000003862008
+      ak: 445752-b3f1-mbs3Z1OiBL2u4fo5NDwe
+
 # 日志配置
 logging:
   level:
