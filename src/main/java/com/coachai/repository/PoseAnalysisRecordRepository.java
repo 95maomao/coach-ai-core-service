@@ -18,7 +18,7 @@ public interface PoseAnalysisRecordRepository extends JpaRepository<PoseAnalysis
     /**
      * 根据用户名和姿势查询最新的一条记录
      */
-    @Query(value = "SELECT * FROM pose_analysis_record WHERE username = :username AND posture = :posture ORDER BY created_at DESC LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT * FROM PoseAnalysisRecord WHERE username = :username AND posture = :posture ORDER BY created_at DESC LIMIT 1", nativeQuery = true)
     Optional<PoseAnalysisRecord> findLatestByUsernameAndPosture(@Param("username") String username, @Param("posture") String posture);
     
     /**
