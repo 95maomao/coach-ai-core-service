@@ -124,13 +124,13 @@ public class DataController {
         file_data.put("mime_type", "image/jpeg");
         file_data.put("file_uri", imageUrl);
 
-        Map<String,String> part_file_data = new HashMap<>();
-        part_file_data.put("file_data", JSONObject.toJSONString(file_data));
+        Map<String,String> partFileData = new HashMap<>();
+        partFileData.put("file_data", JSONObject.toJSONString(file_data));
 
         Map<String,String> text = new HashMap<>();
         text.put("text", instructions);
 
-        parts.add(JSONObject.toJSONString(part_file_data));
+        parts.add(JSONObject.toJSONString(partFileData));
         parts.add(JSONObject.toJSONString(text));
 
         poseImageInstructions.put("role", "USER");
