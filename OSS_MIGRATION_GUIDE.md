@@ -15,10 +15,10 @@
 ```yaml
 OSS配置:
   endpoint: https://oss-cn-shenzhen.aliyuncs.com
-  bucket-name: cri-537ixr7zm3jj17zu-registry
+  bucket-name: your-bucket-name
   region: cn-shenzhen
-  access-key-id: LTAI5t7****
-  access-key-secret: ijJJnswu2****
+  access-key-id: YOUR_ACCESS_KEY_ID
+  access-key-secret: YOUR_ACCESS_KEY_SECRET
 ```
 
 ## 代码变更说明
@@ -116,8 +116,8 @@ kubectl delete -f manifests/minio.yaml
 | 参数 | 说明 | 示例值 |
 |------|------|--------|
 | endpoint | OSS服务端点 | https://oss-cn-shenzhen.aliyuncs.com |
-| access-key-id | RAM用户AccessKey ID | LTAI5t7**** |
-| access-key-secret | RAM用户AccessKey Secret | ijJJnswu2**** |
+| access-key-id | RAM用户AccessKey ID | YOUR_ACCESS_KEY_ID |
+| access-key-secret | RAM用户AccessKey Secret | YOUR_ACCESS_KEY_SECRET |
 | bucket-name | OSS存储桶名称 | cri-537ixr7zm3jj17zu-registry |
 | region | OSS地域代码 | cn-shenzhen |
 | cdn-domain | CDN域名（可选） | https://cdn.example.com |
