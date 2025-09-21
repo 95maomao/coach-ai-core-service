@@ -116,14 +116,14 @@ public class AiWorkflowIssueResponse {
     @AllArgsConstructor
     @Builder
     public static class StructData {
-        // 标准运动姿势参考
-        private String poseReference;
+        // 标准运动姿势参考（数组形式）
+        private List<String> poseReference;
 
         // 症状描述
         private DiagnosisData message;
 
-        // 康复视频
-        private String rehabilitationVideos;
+        // 康复视频（数组形式）
+        private List<String> rehabilitationVideos;
     }
 
 
