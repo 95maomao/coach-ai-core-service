@@ -57,14 +57,28 @@ public class PoseAnalysisRecordController {
                     poseAnalysisRecordService.getLastProblemsForUser(request.getUsername(), request.getPosture());
 
             log.info("获取用户上一次的问题列表: {}", lastProblems);
+
+            // 2. 将lastProblems转换为前端需要的对象格式
+            AiWorkflowRequest.LastProblemObject lastProblemObject = null;
+            if (lastProblems != null && !lastProblems.isEmpty()) {
+                List<String> problemStrings = lastProblems.stream()
+                        .map(AiWorkflowRequest.LastProblem::getProblem)
+                        .collect(java.util.stream.Collectors.toList());
+                
+                lastProblemObject = AiWorkflowRequest.LastProblemObject.builder()
+                        .problem(problemStrings)
+                        .build();
+                
+                log.info("转换后的lastProblem对象: {}", lastProblemObject);
+            }
             
-            // 2. 构建AI工作流请求
+            // 3. 构建AI工作流请求
             AiWorkflowRequest.ParamJson paramJson = AiWorkflowRequest.ParamJson.builder()
                     .username(request.getUsername())
                     .sport(request.getSport())
                     .posture(request.getPosture())
                     .image(request.getImageLink())
-                    .lastProblem(lastProblems)
+                    .lastProblem(lastProblemObject)
                     .build();
             
             AiWorkflowRequest aiRequest = AiWorkflowRequest.builder()
@@ -73,20 +87,20 @@ public class PoseAnalysisRecordController {
                     .paramJson(paramJson)
                     .build();
             
-            // 3. 调用AI工作流
+            // 4. 调用AI工作流
             log.info("开始调用AI工作流进行姿态分析");
             AiWorkflowResponse aiResponse = aiWorkflowService.callPoseAnalysisWorkflow(aiRequest);
             
-            // 4. 解析AI工作流响应
+            // 5. 解析AI工作流响应
             AiWorkflowResponse.FinalMessage finalMessage = aiWorkflowService.parseWorkflowResponse(aiResponse);
             
-            // 5. 提取图片链接（从解析结果中获取）
+            // 6. 提取图片链接（从解析结果中获取）
             AiWorkflowResponse.ParsedResult parsedResult = objectMapper.readValue(
                     aiResponse.getData().getResult(), AiWorkflowResponse.ParsedResult.class);
             String userPoseImage = parsedResult.getData().getStructData().getUserPoseImage();
             String referencePoseImage = parsedResult.getData().getStructData().getReferencePoseImage();
             
-            // 6. 将结果存储到数据库
+            // 7. 将结果存储到数据库
             PoseAnalysisRecordDTO.CreateRequest createRequest = PoseAnalysisRecordDTO.CreateRequest.builder()
                     .username(request.getUsername())
                     .sport(request.getSport())

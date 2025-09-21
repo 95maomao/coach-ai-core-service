@@ -69,9 +69,9 @@ public class AiWorkflowRequest {
         private String image;
         
         /**
-         * 上一次的问题列表
+         * 上一次的问题列表（对象格式）
          */
-        private List<LastProblem> lastProblem;
+        private LastProblemObject lastProblem;
     }
     
     /**
@@ -91,5 +91,19 @@ public class AiWorkflowRequest {
          * 建议
          */
         private String suggestion;
+    }
+    
+    /**
+     * 上一次问题对象格式（前端需要的格式）
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class LastProblemObject {
+        /**
+         * 问题列表（只包含问题描述的数组）
+         */
+        private List<String> problem;
     }
 }
