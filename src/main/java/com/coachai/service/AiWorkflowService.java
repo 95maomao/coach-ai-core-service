@@ -5,7 +5,6 @@ import com.coachai.dto.AiWorkflowIssueResponse;
 import com.coachai.dto.AiWorkflowRequest;
 import com.coachai.dto.AiWorkflowResponse;
 
-
 /**
  * AI工作流服务接口
  */
