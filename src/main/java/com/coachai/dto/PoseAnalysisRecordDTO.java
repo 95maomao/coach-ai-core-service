@@ -9,6 +9,7 @@ import lombok.Builder;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+import java.util.List;
 
 /**
  * 姿态分析记录数据传输对象
@@ -137,5 +138,25 @@ public class PoseAnalysisRecordDTO {
                     .updatedAt(entity.getUpdatedAt())
                     .build();
         }
+    }
+
+    /**
+     * 用于API响应的DTO，包含解析后的结构体
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ApiResponse {
+        private Long id;
+        private String username;
+        private PreferredSport sport;
+        private String posture;
+        private String userPoseImage;
+        private String referencePoseImage;
+        private List<AiWorkflowResponse.AnalysisResult> analysisResults;
+        private List<AiWorkflowResponse.ImprovementResult> improvementResults;
+        private Long createdAt;
+        private Long updatedAt;
     }
 }
