@@ -34,6 +34,7 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            # MySQL配置
             - name: MYSQL_HOST
               value: "47.112.214.8"
             - name: MYSQL_PORT
@@ -44,15 +45,29 @@ spec:
               value: "root"
             - name: MYSQL_PASSWORD
               value: "test123456"
-            # MinIO 配置
-            - name: MINIO_ENDPOINT
-              value: "http://120.77.56.132:9000"
-            - name: MINIO_ACCESS_KEY
-              value: "minioadmin"
-            - name: MINIO_SECRET_KEY
-              value: "minioadmin123"
-            - name: MINIO_BUCKET_NAME
-              value: "coach-ai-files"
+            # OSS配置
+            - name: OSS_ENDPOINT
+              value: "https://oss-cn-shenzhen.aliyuncs.com"
+            - name: OSS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oss-secret
+                  key: access-key-id
+            - name: OSS_ACCESS_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oss-secret
+                  key: access-key-secret
+            - name: OSS_BUCKET_NAME
+              value: "cri-537ixr7zm3jj17zu-registry"
+            - name: OSS_REGION
+              value: "cn-shenzhen"
+            - name: OSS_SECURE
+              value: "true"
+            - name: OSS_CONNECTION_TIMEOUT
+              value: "50000"
+            - name: OSS_SOCKET_TIMEOUT
+              value: "50000"
 ---
 
 # LoadBalancer Service for external access
