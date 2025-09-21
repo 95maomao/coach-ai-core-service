@@ -4,6 +4,7 @@ import com.coachai.common.ApiResponse;
 import com.coachai.config.AiWorkflowConfig;
 import com.coachai.dto.*;
 import com.coachai.service.AiWorkflowService;
+import com.coachai.service.IssueAnalysisRecordService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,12 +27,22 @@ public class IssueAnalysisRecordController {
     private final AiWorkflowService aiWorkflowService;
     private final AiWorkflowConfig aiWorkflowConfig;
     private final ObjectMapper objectMapper;
+    private final IssueAnalysisRecordService issueAnalysisRecordService;
+
+
+//    {
+//        "username": "weile",
+//        "bodyParts": ["膝盖", "小腿"],
+//        "sport": "跑步",
+//        "posture": ["前倾跑姿", "着地姿势"],
+//        "description": "跑步时膝盖内侧疼痛，特别是在长距离跑步后疼痛加剧，感觉膝盖有压迫感"
+//    }
 
     /**
      * 症状分析接口
      */
     @PostMapping("/analyze")
-    public ResponseEntity<ApiResponse<AiWorkflowIssueResponse.DiagnosisData>> processIssueAnalysis(
+    public ResponseEntity<ApiResponse<IssueAnalysisRecordDTO.ApiResponse>> processIssueAnalysis(
             @RequestBody @Valid IssueAnalysisRequest request) {
         
         log.info("接收到姿态分析请求: username={}, sport={}, posture={}, imageLink={}", 
@@ -102,28 +113,36 @@ public class IssueAnalysisRecordController {
                     diagnosisData.getRehabilitationVideos() != null ? diagnosisData.getRehabilitationVideos().size() : 0);
             
             // 7. 将结果存储到数据库
-//            PoseAnalysisRecordDTO.CreateRequest createRequest = PoseAnalysisRecordDTO.CreateRequest.builder()
-//                    .username(request.getUsername())
-//                    .sport(request.getSport())
-//                    .posture(request.getPosture())
-//                    .userPoseImage(userPoseImage != null ? userPoseImage : request.getImageLink())
-//                    .referencePoseImage(referencePoseImage != null ? referencePoseImage : request.getImageLink())
-//                    .analysisResults(objectMapper.writeValueAsString(finalMessage.getAnalysisResults()))
-//                    .improvementResults(objectMapper.writeValueAsString(finalMessage.getImprovementResults()))
-//                    .build();
+            String username = request.getUsername() != null ? request.getUsername() : "anonymous_user";
             
-//            ApiResponse<PoseAnalysisRecordDTO.QueryResponse> saveResponse =
-//                    poseAnalysisRecordService.createRecord(createRequest);
+            IssueAnalysisRecordDTO.CreateRequest createRequest = IssueAnalysisRecordDTO.CreateRequest.builder()
+                    .username(username)
+                    .sport(diagnosisData.getSport())
+                    .posture(objectMapper.writeValueAsString(diagnosisData.getPosture()))
+                    .riskLevel(diagnosisData.getRiskLevel())
+                    .primaryDiagnosis(diagnosisData.getPrimaryDiagnosis())
+                    .confidence(diagnosisData.getConfidence())
+                    .isNormal(diagnosisData.isNormal())
+                    .symptoms(objectMapper.writeValueAsString(diagnosisData.getSymptoms()))
+                    .treatment(objectMapper.writeValueAsString(diagnosisData.getTreatment()))
+                    .poseReference(objectMapper.writeValueAsString(diagnosisData.getPoseReference()))
+                    .rehabilitationVideos(objectMapper.writeValueAsString(diagnosisData.getRehabilitationVideos()))
+                    .build();
             
-//            if (!"SUCCESS".equals(saveResponse.getResult())) {
-//                log.error("保存姿态分析记录失败: {}", saveResponse.getMessage());
-//                return ResponseEntity.ok(ApiResponse.error("姿态分析完成但保存失败: " + saveResponse.getMessage()));
-//            }
-//
-//            log.info("姿态分析完成并保存成功: recordId={}, overallScore={}",
-//                    saveResponse.getData().getId(), finalMessage.getOverallScore());
-//
-            return ResponseEntity.ok(ApiResponse.success("姿态分析完成", diagnosisData));
+            ApiResponse<IssueAnalysisRecordDTO.ApiResponse> saveResponse =
+                    issueAnalysisRecordService.createRecordWithParsedResults(createRequest);
+            
+            if (!"SUCCESS".equals(saveResponse.getResult())) {
+                log.error("保存症状分析记录失败: {}", saveResponse.getMessage());
+                return ResponseEntity.ok(ApiResponse.error("症状分析完成但保存失败: " + saveResponse.getMessage()));
+            }
+
+            log.info("症状分析完成并保存成功: recordId={}, 诊断结果: {}, 风险等级: {}",
+                    saveResponse.getData().getId(), 
+                    saveResponse.getData().getPrimaryDiagnosis(),
+                    saveResponse.getData().getRiskLevel());
+
+            return ResponseEntity.ok(ApiResponse.success("症状分析完成", saveResponse.getData()));
             
         } catch (Exception e) {
             log.error("姿态分析失败", e);
