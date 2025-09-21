@@ -96,14 +96,11 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
                 throw new RuntimeException("解析第一层JSON失败，数据结构不正确");
             }
             
-            // 第二层解析：从 structData.message 中解析出 FinalMessage
-            String messageJson = parsedResult.getData().getStructData().getMessage();
-            log.debug("第二层JSON: {}", messageJson);
-            
-            AiWorkflowResponse.FinalMessage finalMessage = objectMapper.readValue(messageJson, AiWorkflowResponse.FinalMessage.class);
+            // 直接获取 FinalMessage 对象，不需要 JSON 解析
+            AiWorkflowResponse.FinalMessage finalMessage = parsedResult.getData().getStructData().getMessage();
             
             if (finalMessage == null) {
-                throw new RuntimeException("解析第二层JSON失败，消息数据为空");
+                throw new RuntimeException("解析AI工作流响应失败，FinalMessage为空");
             }
             
             log.info("AI工作流响应解析成功，总体评分: {}, 分析结果数量: {}, 改进结果数量: {}", 

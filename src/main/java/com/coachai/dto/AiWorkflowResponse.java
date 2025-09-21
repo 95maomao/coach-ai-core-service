@@ -1,5 +1,6 @@
 package com.coachai.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -127,9 +128,9 @@ public class AiWorkflowResponse {
         private String referencePoseImage;
         
         /**
-         * 消息（JSON字符串）
+         * 消息（FinalMessage对象）
          */
-        private String message;
+        private FinalMessage message;
     }
     
     /**
@@ -139,6 +140,7 @@ public class AiWorkflowResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class FinalMessage {
         /**
          * 是否成功
@@ -159,6 +161,11 @@ public class AiWorkflowResponse {
          * 改进结果列表
          */
         private List<ImprovementResult> improvementResults;
+        
+        /**
+         * 用户姿势图片指令
+         */
+        private String userPoseImageInstructions;
     }
     
     /**

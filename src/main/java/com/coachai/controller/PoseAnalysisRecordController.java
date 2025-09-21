@@ -55,6 +55,8 @@ public class PoseAnalysisRecordController {
             // 1. 获取用户上一次的问题列表
             List<AiWorkflowRequest.LastProblem> lastProblems = 
                     poseAnalysisRecordService.getLastProblemsForUser(request.getUsername(), request.getPosture());
+
+            log.info("获取用户上一次的问题列表: {}", lastProblems);
             
             // 2. 构建AI工作流请求
             AiWorkflowRequest.ParamJson paramJson = AiWorkflowRequest.ParamJson.builder()
