@@ -158,5 +158,6 @@ public class PoseAnalysisRecordDTO {
         private List<AiWorkflowResponse.ImprovementResult> improvementResults;
         private Long createdAt;
         private Long updatedAt;
+        private Integer overallScore;
     }
 }
