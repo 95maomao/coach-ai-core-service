@@ -26,6 +26,11 @@ public class AiWorkflowConfig {
      * 姿态分析配置
      */
     private PoseAnalysis poseAnalysis;
+
+    /**
+     * 症状分析配置
+     */
+    private IssueAnalysis issueAnalysis;
     
     /**
      * 姿态分析配置内部类
@@ -37,6 +42,22 @@ public class AiWorkflowConfig {
          */
         private String apiCode;
         
+        /**
+         * 访问密钥
+         */
+        private String ak;
+    }
+
+    /**
+     *  症状分析配置内部类
+     */
+    @Data
+    public static class IssueAnalysis {
+        /**
+         * API代码
+         */
+        private String apiCode;
+
         /**
          * 访问密钥
          */
