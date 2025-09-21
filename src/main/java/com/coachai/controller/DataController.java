@@ -62,7 +62,7 @@ public class DataController {
      * @return 根据类型返回不同格式的JSON响应
      */
     @PostMapping("/pose-analysis")
-    public ResponseEntity<ApiResponse<String>> processPoseAnalysis(
+    public ResponseEntity<ApiResponse<PoseAnalysisResponse.PosePart>> processPoseAnalysis(
             @RequestBody @Valid PoseAnalysisDataProcessRequest request) {
 
         log.info("接收到姿态分析处理请求，类型: {}", request.getType());
@@ -79,11 +79,20 @@ public class DataController {
             // 获取图片url
             String imageUrl = request.getImageUrl();
 
+            String poseImageInstructions = generatePoseImageInstructions(instructions, imageUrl);
+
             // 构造响应
-            String poseImageInstructions =generatePoseImageInstructions(instructions,imageUrl);
+            PoseAnalysisResponse.PosePart part = new PoseAnalysisResponse.PosePart();
+            part.setImage(imageUrl);
+
+            if ("userPoseImage".equals(request.getType())) {
+                part.setUserPoseImageInstructions(poseImageInstructions);
+            } else {
+                part.setReferencePoseImageInstructions(poseImageInstructions);
+            }
 
             log.info("姿态分析处理完成，类型: {}", request.getType());
-            return ResponseEntity.ok(ApiResponse.success("姿态分析处理成功", poseImageInstructions));
+            return ResponseEntity.ok(ApiResponse.success("姿态分析处理成功", part));
 
         } catch (Exception e) {
             log.error("姿态分析处理失败", e);
