@@ -1,13 +1,11 @@
 package com.coachai.dto;
 
-import com.coachai.entity.CoachAiUser.PreferredSport;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 
 /**
  * 姿态分析请求DTO
@@ -33,8 +31,8 @@ public class PoseAnalysisRequest {
     /**
      * 运动类型
      */
-    @NotNull(message = "运动类型不能为空")
-    private PreferredSport sport;
+    @NotBlank(message = "运动类型不能为空")
+    private String sport;
     
     /**
      * 姿势
