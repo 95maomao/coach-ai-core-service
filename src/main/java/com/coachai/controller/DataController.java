@@ -159,8 +159,7 @@ public class DataController {
 
             if (answerNode != null) {
                 // 如果有answer字段，解析其中的JSON字符串
-                String answerJsonString = answerNode.asText();
-                targetNode = objectMapper.readTree(answerJsonString);
+                targetNode = answerNode;
             } else {
                 // 如果没有answer字段，直接在顶层查找
                 targetNode = jsonNode;
