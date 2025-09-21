@@ -1,0 +1,66 @@
+---
+# phpMyAdmin Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phpmyadmin
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: phpmyadmin
+  template:
+    metadata:
+      labels:
+        app: phpmyadmin
+    spec:
+      imagePullSecrets:
+        - name: acr-registry-private
+      containers:
+        - name: phpmyadmin
+          image: mz-acr-registry.cn-shenzhen.cr.aliyuncs.com/coach_ai/phpmyadmin/phpmyadmin:latest
+          ports:
+            - containerPort: 80
+          env:
+            # 连接到你的 MySQL 服务
+            - name: PMA_HOST
+              value: "47.112.214.8"  # 使用你现有的 MySQL 外部 IP
+            - name: PMA_PORT
+              value: "3306"
+            - name: PMA_USER
+              value: "root"
+            - name: PMA_PASSWORD
+              value: "test123456"
+            - name: MYSQL_ROOT_PASSWORD
+              value: "test123456"
+            # 可选：设置上传限制
+            - name: UPLOAD_LIMIT
+              value: "64M"
+            # 允许任意服务器连接（开发环境）
+            - name: PMA_ARBITRARY
+              value: "1"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+
+---
+# phpMyAdmin LoadBalancer Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin-lb
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: phpmyadmin
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
