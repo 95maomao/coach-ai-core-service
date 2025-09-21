@@ -24,13 +24,10 @@ public class IssueAnalysisRecordController {
     private final AiWorkflowConfig aiWorkflowConfig;
 
     /**
-     * 姿态分析接口
-     * 
-     * @param request 姿态分析请求，包含imageLink、username、sport、posture
-     * @return 姿态分析结果
+     * 症状分析接口
      */
     @PostMapping("/analyze")
-    public ResponseEntity<ApiResponse<AiWorkflowIssueResponse.DiagnosisData>> processPoseAnalysis(
+    public ResponseEntity<ApiResponse<AiWorkflowIssueResponse.DiagnosisData>> processIssueAnalysis(
             @RequestBody @Valid IssueAnalysisRequest request) {
         
         log.info("接收到姿态分析请求: username={}, sport={}, posture={}, imageLink={}", 

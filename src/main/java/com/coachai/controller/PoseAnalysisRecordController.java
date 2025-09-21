@@ -32,13 +32,13 @@ public class PoseAnalysisRecordController {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * 姿态分析接口
-     * 
+     * 症状分析接口
+     *
      * @param request 姿态分析请求，包含imageLink、username、sport、posture
      * @return 姿态分析结果
      */
     @PostMapping("/analyze")
-    public ResponseEntity<ApiResponse<PoseAnalysisRecordDTO.QueryResponse>> processPoseAnalysis(
+    public ResponseEntity<ApiResponse<PoseAnalysisRecordDTO.ApiResponse>> processPoseAnalysis(
             @RequestBody @Valid PoseAnalysisRequest request) {
         
         log.info("接收到姿态分析请求: username={}, sport={}, posture={}, imageLink={}", 
@@ -88,16 +88,18 @@ public class PoseAnalysisRecordController {
                     .improvementResults(objectMapper.writeValueAsString(finalMessage.getImprovementResults()))
                     .build();
             
-            ApiResponse<PoseAnalysisRecordDTO.QueryResponse> saveResponse = 
-                    poseAnalysisRecordService.createRecord(createRequest);
+            ApiResponse<PoseAnalysisRecordDTO.ApiResponse> saveResponse = 
+                    poseAnalysisRecordService.createRecordWithParsedResults(createRequest);
             
             if (!"SUCCESS".equals(saveResponse.getResult())) {
                 log.error("保存姿态分析记录失败: {}", saveResponse.getMessage());
                 return ResponseEntity.ok(ApiResponse.error("姿态分析完成但保存失败: " + saveResponse.getMessage()));
             }
             
-            log.info("姿态分析完成并保存成功: recordId={}, overallScore={}", 
-                    saveResponse.getData().getId(), finalMessage.getOverallScore());
+            log.info("姿态分析完成并保存成功: recordId={}, overallScore={}, analysisResults数量={}, improvementResults数量={}", 
+                    saveResponse.getData().getId(), finalMessage.getOverallScore(),
+                    saveResponse.getData().getAnalysisResults().size(),
+                    saveResponse.getData().getImprovementResults().size());
             
             return ResponseEntity.ok(ApiResponse.success("姿态分析完成", saveResponse.getData()));
             

@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -126,6 +125,77 @@ public class PoseAnalysisRecordServiceImpl implements PoseAnalysisRecordService 
                     username, posture, e.getMessage(), e);
             // 出错时返回空列表，不影响主流程
             return Collections.emptyList();
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<PoseAnalysisRecordDTO.ApiResponse> createRecordWithParsedResults(PoseAnalysisRecordDTO.CreateRequest createRequest) {
+        log.info("开始创建姿态分析记录并解析结果: username={}, posture={}", createRequest.getUsername(), createRequest.getPosture());
+        
+        try {
+            // 1. 先创建记录（保持JSON字符串格式）
+            PoseAnalysisRecord record = PoseAnalysisRecord.builder()
+                    .username(createRequest.getUsername())
+                    .sport(createRequest.getSport())
+                    .posture(createRequest.getPosture())
+                    .userPoseImage(createRequest.getUserPoseImage())
+                    .referencePoseImage(createRequest.getReferencePoseImage())
+                    .analysisResults(createRequest.getAnalysisResults())
+                    .improvementResults(createRequest.getImprovementResults())
+                    .build();
+            
+            PoseAnalysisRecord savedRecord = poseAnalysisRecordRepository.save(record);
+            
+            // 2. 解析JSON字符串为结构体
+            List<AiWorkflowResponse.AnalysisResult> parsedAnalysisResults = new ArrayList<>();
+            List<AiWorkflowResponse.ImprovementResult> parsedImprovementResults = new ArrayList<>();
+            
+            // 解析analysisResults
+            if (savedRecord.getAnalysisResults() != null && !savedRecord.getAnalysisResults().trim().isEmpty()) {
+                try {
+                    AiWorkflowResponse.AnalysisResult[] analysisArray = objectMapper.readValue(
+                            savedRecord.getAnalysisResults(), AiWorkflowResponse.AnalysisResult[].class);
+                    parsedAnalysisResults = List.of(analysisArray);
+                } catch (Exception e) {
+                    log.warn("解析analysisResults失败: {}", e.getMessage());
+                }
+            }
+            
+            // 解析improvementResults
+            if (savedRecord.getImprovementResults() != null && !savedRecord.getImprovementResults().trim().isEmpty()) {
+                try {
+                    AiWorkflowResponse.ImprovementResult[] improvementArray = objectMapper.readValue(
+                            savedRecord.getImprovementResults(), AiWorkflowResponse.ImprovementResult[].class);
+                    parsedImprovementResults = List.of(improvementArray);
+                } catch (Exception e) {
+                    log.warn("解析improvementResults失败: {}", e.getMessage());
+                }
+            }
+            
+            // 3. 构建API响应
+            PoseAnalysisRecordDTO.ApiResponse apiResponse = PoseAnalysisRecordDTO.ApiResponse.builder()
+                    .id(savedRecord.getId())
+                    .username(savedRecord.getUsername())
+                    .sport(savedRecord.getSport())
+                    .posture(savedRecord.getPosture())
+                    .userPoseImage(savedRecord.getUserPoseImage())
+                    .referencePoseImage(savedRecord.getReferencePoseImage())
+                    .analysisResults(parsedAnalysisResults)
+                    .improvementResults(parsedImprovementResults)
+                    .createdAt(savedRecord.getCreatedAt())
+                    .updatedAt(savedRecord.getUpdatedAt())
+                    .build();
+            
+            log.info("姿态分析记录创建成功并解析完成: id={}, analysisResults数量={}, improvementResults数量={}", 
+                    savedRecord.getId(), parsedAnalysisResults.size(), parsedImprovementResults.size());
+            
+            return ApiResponse.success("姿态分析记录创建成功", apiResponse);
+            
+        } catch (Exception e) {
+            log.error("创建姿态分析记录并解析结果失败: username={}, posture={}, error={}", 
+                    createRequest.getUsername(), createRequest.getPosture(), e.getMessage(), e);
+            return ApiResponse.error("创建姿态分析记录失败: " + e.getMessage());
         }
     }
 }
