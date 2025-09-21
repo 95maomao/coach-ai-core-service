@@ -62,7 +62,7 @@ public class DataController {
      * @return 根据类型返回不同格式的JSON响应
      */
     @PostMapping("/pose-analysis")
-    public ResponseEntity<ApiResponse<PoseAnalysisResponse.PosePart>> processPoseAnalysis(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> processPoseAnalysis(
             @RequestBody @Valid PoseAnalysisDataProcessRequest request) {
 
         log.info("接收到姿态分析处理请求，类型: {}", request.getType());
@@ -79,20 +79,11 @@ public class DataController {
             // 获取图片url
             String imageUrl = request.getImageUrl();
 
-            String poseImageInstructions = generatePoseImageInstructions(instructions, imageUrl);
-
             // 构造响应
-            PoseAnalysisResponse.PosePart part = new PoseAnalysisResponse.PosePart();
-            part.setImage(imageUrl);
-
-            if ("userPoseImage".equals(request.getType())) {
-                part.setUserPoseImageInstructions(poseImageInstructions);
-            } else {
-                part.setReferencePoseImageInstructions(poseImageInstructions);
-            }
+            Map<String, Object>  poseImageInstructions = generatePoseImageInstructions(instructions, imageUrl);
 
             log.info("姿态分析处理完成，类型: {}", request.getType());
-            return ResponseEntity.ok(ApiResponse.success("姿态分析处理成功", part));
+            return ResponseEntity.ok(ApiResponse.success("姿态分析处理成功", poseImageInstructions));
 
         } catch (Exception e) {
             log.error("姿态分析处理失败", e);
@@ -100,7 +91,7 @@ public class DataController {
         }
     }
 
-    private String generatePoseImageInstructions(String instructions, String imageUrl) {
+    private Map<String, Object>  generatePoseImageInstructions(String instructions, String imageUrl) {
         // 构建期望的数据结构
         Map<String, Object> response = new HashMap<>();
         response.put("role", "user");
@@ -122,12 +113,8 @@ public class DataController {
 
         response.put("parts", parts);
 
-        try {
-            return objectMapper.writeValueAsString(response);
-        } catch (Exception e) {
-            log.error("生成姿态图片指令失败", e);
-            throw new RuntimeException("生成姿态图片指令失败: " + e.getMessage());
-        }
+        return response;
+
     }
 
 
