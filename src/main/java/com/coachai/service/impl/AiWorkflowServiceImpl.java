@@ -38,7 +38,7 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
             
             // 创建RestTemplate并设置分离的超时配置
             RestTemplate restTemplate = restTemplateBuilder
-                    .setConnectTimeout(Duration.ofMillis(aiWorkflowConfig.getConnectionTimeout()))  // 连接超时15秒
+                    .setConnectTimeout(Duration.ofMillis(aiWorkflowConfig.getConnectionTimeout()))  // 连接超时60秒
                     .setReadTimeout(Duration.ofMillis(aiWorkflowConfig.getReadTimeout()))           // 读取超时5分钟
                     .build();
             
@@ -130,7 +130,7 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
 
             // 创建RestTemplate并设置分离的超时配置
             RestTemplate restTemplate = restTemplateBuilder
-                    .setConnectTimeout(Duration.ofMillis(aiWorkflowConfig.getConnectionTimeout()))  // 连接超时15秒
+                    .setConnectTimeout(Duration.ofMillis(aiWorkflowConfig.getConnectionTimeout()))  // 连接超时60秒
                     .setReadTimeout(Duration.ofMillis(aiWorkflowConfig.getReadTimeout()))           // 读取超时5分钟
                     .build();
 

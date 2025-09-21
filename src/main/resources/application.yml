@@ -4,6 +4,15 @@ server:
     context-path: /api
   # HTTP请求大小限制
   max-http-header-size: 1MB
+  
+  # Tomcat优化配置
+  tomcat:
+    connection-timeout: 360000     # 6分钟，大于AI工作流最大处理时间
+    keep-alive-timeout: 60000      # 1分钟，保持连接活跃
+    max-connections: 200           # 最大连接数
+    threads:
+      max: 200                     # 最大工作线程
+      min-spare: 10               # 最小空闲线程
 
 spring:
   application:
@@ -18,6 +27,9 @@ spring:
   # HTTP请求配置
   mvc:
     max-request-size: 50MB
+    # 异步请求配置
+    async:
+      request-timeout: 360000      # 6分钟，与Tomcat保持一致
   
   # 数据库配置
   datasource:
@@ -67,7 +79,9 @@ ai:
   workflow:
     # 基础配置
     base-url: https://apaas.alibaba-inc.com/common/invoke
-    timeout: 120000  # 2分钟超时，单位毫秒
+    connection-timeout: 60000      # 连接超时60秒 - 适应公网到内网的连接延迟
+    read-timeout: 300000          # 读取超时5分钟 - 允许AI处理
+    timeout: 120000               # 兼容性保留，已废弃
     
     # 姿态分析工作流配置
     pose-analysis:

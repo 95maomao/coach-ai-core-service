@@ -20,7 +20,7 @@ public class AiWorkflowConfig {
     /**
      * 连接超时时间（毫秒）
      */
-    private Long connectionTimeout = 15000L;  // 15秒
+    private Long connectionTimeout = 60000L;  // 60秒
     
     /**
      * 读取超时时间（毫秒）
