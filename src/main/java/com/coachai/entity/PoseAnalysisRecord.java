@@ -1,6 +1,5 @@
 package com.coachai.entity;
 
-import com.coachai.entity.CoachAiUser.PreferredSport;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -30,9 +29,9 @@ public class PoseAnalysisRecord {
     @Column(nullable = false)
     private String username;
 
-    @Enumerated(EnumType.STRING)
+    @NotBlank(message = "运动类型不能为空")
     @Column(nullable = false)
-    private PreferredSport sport;
+    private String sport;
 
     @NotBlank(message = "姿势不能为空")
     @Column(nullable = false)

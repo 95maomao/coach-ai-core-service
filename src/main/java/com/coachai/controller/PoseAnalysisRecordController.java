@@ -31,6 +31,13 @@ public class PoseAnalysisRecordController {
     private final AiWorkflowConfig aiWorkflowConfig;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+//    {
+//        "imageLink": "https://guli-edu-ydw.oss-cn-beijing.aliyuncs.com/CoachAI/921.JPG",
+//            "username": "weile",
+//            "sport": "健身",
+//            "posture": "深蹲"
+//    }
+
     /**
      * 症状分析接口
      *
@@ -52,7 +59,7 @@ public class PoseAnalysisRecordController {
             // 2. 构建AI工作流请求
             AiWorkflowRequest.ParamJson paramJson = AiWorkflowRequest.ParamJson.builder()
                     .username(request.getUsername())
-                    .sport(request.getSport().name())
+                    .sport(request.getSport())
                     .posture(request.getPosture())
                     .image(request.getImageLink())
                     .lastProblem(lastProblems)

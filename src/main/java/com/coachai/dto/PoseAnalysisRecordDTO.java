@@ -1,7 +1,6 @@
 package com.coachai.dto;
 
 import com.coachai.entity.PoseAnalysisRecord;
-import com.coachai.entity.CoachAiUser.PreferredSport;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,7 +25,8 @@ public class PoseAnalysisRecordDTO {
     @Size(max = 50, message = "用户名长度不能超过50个字符")
     private String username;
     
-    private PreferredSport sport;
+    @NotBlank(message = "运动类型不能为空")
+    private String sport;
     
     @NotBlank(message = "姿势不能为空")
     private String posture;
@@ -89,7 +89,7 @@ public class PoseAnalysisRecordDTO {
         @Size(max = 50, message = "用户名长度不能超过50个字符")
         private String username;
         
-        private PreferredSport sport;
+        private String sport;
         
         @NotBlank(message = "姿势不能为空")
         private String posture;
@@ -115,7 +115,7 @@ public class PoseAnalysisRecordDTO {
     public static class QueryResponse {
         private Long id;
         private String username;
-        private PreferredSport sport;
+        private String sport;
         private String posture;
         private String userPoseImage;
         private String referencePoseImage;
@@ -150,7 +150,7 @@ public class PoseAnalysisRecordDTO {
     public static class ApiResponse {
         private Long id;
         private String username;
-        private PreferredSport sport;
+        private String sport;
         private String posture;
         private String userPoseImage;
         private String referencePoseImage;
