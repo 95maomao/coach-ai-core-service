@@ -19,6 +19,6 @@ public class DataProcessRequest {
     /**
      * Base64字符串参数
      */
-    @NotBlank(message = "Base64字符串不能为空")
+    @NotBlank(message = "link不能为空")
     private String base64String;
 }

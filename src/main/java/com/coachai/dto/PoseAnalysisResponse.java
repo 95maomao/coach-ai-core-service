@@ -32,7 +32,7 @@ public class PoseAnalysisResponse {
     @AllArgsConstructor
     public static class PosePart {
         /**
-         * 图片数据（base64）
+         * 图片数据（base64）url
          */
         private String image;
         
