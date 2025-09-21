@@ -214,13 +214,70 @@ public class OssFileStorageService implements FileStorageService {
 
             // 解析JSON
             JsonNode jsonNode = objectMapper.readTree(jsonString);
-            JsonNode imageNode = jsonNode.get("image");
-
-            if (imageNode == null) {
-                throw new IllegalArgumentException("JSON中未找到image字段");
+            
+            // 尝试多种可能的JSON结构来查找base64图片数据
+            String base64Image = null;
+            String mimeType = "image/png"; // 默认MIME类型
+            
+            // 方式1: 查找 data.response.candidates[0].content.parts[].inlineData.data 结构
+            JsonNode dataNode = jsonNode.get("data");
+            if (dataNode != null) {
+                JsonNode responseNode = dataNode.get("response");
+                if (responseNode != null) {
+                    JsonNode candidatesNode = responseNode.get("candidates");
+                    if (candidatesNode != null && candidatesNode.isArray() && candidatesNode.size() > 0) {
+                        JsonNode contentNode = candidatesNode.get(0).get("content");
+                        if (contentNode != null) {
+                            JsonNode partsNode = contentNode.get("parts");
+                            if (partsNode != null && partsNode.isArray()) {
+                                // 遍历parts数组，查找包含inlineData的部分
+                                for (JsonNode part : partsNode) {
+                                    JsonNode inlineDataNode = part.get("inlineData");
+                                    if (inlineDataNode != null) {
+                                        JsonNode dataField = inlineDataNode.get("data");
+                                        JsonNode mimeTypeField = inlineDataNode.get("mimeType");
+                                        if (dataField != null) {
+                                            base64Image = dataField.asText();
+                                            if (mimeTypeField != null) {
+                                                mimeType = mimeTypeField.asText();
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 方式2: 查找简单的 image 字段（兼容旧格式）
+            if (base64Image == null) {
+                JsonNode imageNode = jsonNode.get("image");
+                if (imageNode != null) {
+                    base64Image = imageNode.asText();
+                }
+            }
+            
+            // 方式3: 查找 base64 字段
+            if (base64Image == null) {
+                JsonNode base64Node = jsonNode.get("base64");
+                if (base64Node != null) {
+                    base64Image = base64Node.asText();
+                }
             }
 
-            String base64Image = imageNode.asText();
+            if (base64Image == null || base64Image.trim().isEmpty()) {
+                throw new IllegalArgumentException("JSON中未找到有效的base64图片数据。支持的路径: data.response.candidates[0].content.parts[].inlineData.data, image, base64");
+            }
+
+            log.info("找到base64图片数据，MIME类型: {}, 数据长度: {}", mimeType, base64Image.length());
+            
+            // 如果base64数据没有MIME类型前缀，根据检测到的mimeType添加
+            if (!base64Image.startsWith("data:")) {
+                base64Image = "data:" + mimeType + ";base64," + base64Image;
+            }
+            
             return saveBase64Image(base64Image);
 
         } catch (Exception e) {
